@@ -1,5 +1,6 @@
 #include "lrsettingdialog.h"
 #include "ui_lrsettingdialog.h"
+#include <QFile>
 
 namespace LimeReport{
 
@@ -8,6 +9,10 @@ SettingDialog::SettingDialog(QWidget *parent) :
     ui(new Ui::SettingDialog)
 {
     ui->setupUi(this);
+    QFile theme(":/qdarkstyle/style.qss");
+    if (!theme.exists()){
+        ui->cbbUseDarkTheme->setVisible(false);
+    }
 }
 
 SettingDialog::~SettingDialog()
@@ -32,9 +37,23 @@ QFont SettingDialog::defaultFont()
     return result;
 }
 
+bool SettingDialog::userDarkTheme()
+{
+    return ui->cbbUseDarkTheme->isChecked();
+}
+
 bool SettingDialog::suppressAbsentFieldsAndVarsWarnings()
 {
     return ui->cbSuppressWarnings->isChecked();
+}
+
+QLocale::Language SettingDialog::designerLanguage()
+{
+    foreach (QLocale::Language language, m_aviableLanguages) {
+        if (ui->designerLanguage->currentText().compare(QLocale::languageToString(language)) == 0)
+            return language;
+    }
+    return QLocale().language();
 }
 
 void SettingDialog::setSuppressAbsentFieldsAndVarsWarnings(bool value){
@@ -55,6 +74,29 @@ void SettingDialog::setDefaultFont(const QFont &value)
 {
     ui->defaultFont->setCurrentFont(value);
     ui->defaultFontSize->setValue(value.pointSize());
+}
+
+void SettingDialog::setUseDarkTheme(bool value)
+{
+    ui->cbbUseDarkTheme->setChecked(value);
+}
+
+void SettingDialog::setDesignerLanguages(QList<QLocale::Language> languages, QLocale::Language currentLanguage)
+{
+    m_aviableLanguages = languages;
+    m_currentLanguage = currentLanguage;
+
+    if (languages.isEmpty()) {
+        ui->designerLanguage->setVisible(false);
+        ui->lblLanguage->setVisible(false);
+        return;
+    }
+    ui->designerLanguage->addItem(QLocale::languageToString(currentLanguage));
+    foreach (QLocale::Language language, languages) {
+        if (language != currentLanguage)
+            ui->designerLanguage->addItem(QLocale::languageToString(language));
+    }
+    ui->designerLanguage->setCurrentText(QLocale::languageToString(currentLanguage));
 }
 
 } // namespace LimeReport

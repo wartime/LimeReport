@@ -58,6 +58,7 @@ public:
     virtual bool bof() = 0;
     virtual bool eof() = 0;
     virtual QVariant data(const QString& columnName) = 0;
+    virtual QVariant dataByKeyField(const QString& columnName, const QString& keyColumnName, QVariant keyData) = 0;
     virtual int columnCount() = 0;
     virtual QString columnNameByIndex(int columnIndex) = 0;
     virtual int columnIndexByName(QString name) = 0;
@@ -336,7 +337,7 @@ public:
     void invalidate(IDataSource::DatasourceMode mode, bool dbWillBeClosed = false);
     void update(){}
     void clearErrors(){m_lastError = "";}
-    DataSourceManager* dataManager() const {return m_dataManger;}
+    DataSourceManager* dataManager() const {return m_dataManager;}
 private slots:
     void slotChildModelDestoroyed();
 private:
@@ -346,7 +347,7 @@ private:
     QString m_lastError;
     IDataSource::DatasourceMode m_mode;
     bool m_invalid;
-    DataSourceManager* m_dataManger;
+    DataSourceManager* m_dataManager;
 };
 
 class ModelToDataSource : public QObject, public IDataSource{
@@ -362,6 +363,7 @@ public:
     bool eof();
     bool bof();
     QVariant data(const QString& columnName);
+    QVariant dataByKeyField(const QString& columnName, const QString& keyColumnName, QVariant keyData);
     int columnCount();
     QString columnNameByIndex(int columnIndex);
     int columnIndexByName(QString name);
@@ -393,6 +395,7 @@ public:
     bool bof(){return m_currentRow == -1;}
     bool eof(){return m_eof;}
     QVariant data(const QString &columnName);
+    QVariant dataByKeyField(const QString& columnName, const QString& keyColumnName, QVariant keyData);
     int columnCount();
     QString columnNameByIndex(int columnIndex);
     int columnIndexByName(QString name);
@@ -410,6 +413,7 @@ private:
     int m_rowCount;
     QHash<QString, QVariant> m_valuesCache;
     bool m_getDataFromCache;
+    QVariant callbackData(const QString& columnName, int row);
 };
 
 class CallbackDatasourceHolder :public QObject, public IDataSourceHolder{

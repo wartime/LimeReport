@@ -123,12 +123,17 @@ public:
     void clearUserVariables();
     void addVariable(const QString& name, const QVariant& value, VarDesc::VarType type=VarDesc::User, RenderPass pass=FirstPass);
     void changeVariable(const QString& name,const QVariant& value);
-    QVariant variable(const QString& variableName);
-    RenderPass variablePass(const QString& name);
+    QVariant    variable(const QString& variableName);
+    RenderPass  variablePass(const QString& name);
     QStringList variableNames();
-    QStringList namesOfUserVariables();
-    VarDesc::VarType variableType(const QString& name);
+    QStringList variableNamesByRenderPass(RenderPass pass);
+    QStringList userVariableNames();
+    VarDesc::VarType   variableType(const QString& name);
+    VariableDataType   variableDataType(const QString& name);
+    void setVariableDataType(const QString &name, VariableDataType value);
     bool variableIsSystem(const QString& name);
+    bool variableIsMandatory(const QString& name);
+    void setVarableMandatory(const QString &name, bool value);
     QString queryText(const QString& dataSourceName);
     QString connectionName(const QString& dataSourceName);
     void removeDatasource(const QString& name);
@@ -159,8 +164,15 @@ public:
     QStringList dataSourceNames(const QString& connectionName);
     QStringList connectionNames();
     QStringList fieldNames(const QString& datasourceName);
-    bool containsField(const QString& fieldName);
-    QVariant fieldData(const QString& fieldName);
+    bool        containsField(const QString& fieldName);
+    QVariant    fieldData(const QString& fieldName);
+    QVariant    fieldDataByKey(
+            const QString& datasourceName,
+            const QString& valueFieldName,
+            const QString& keyFieldName,
+            QVariant keyValue
+    );
+    void    reopenDatasource(const QString& datasourceName);
 
     QString extractDataSource(const QString& fieldName);
     QString extractFieldName(const QString& fieldName);

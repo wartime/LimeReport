@@ -134,7 +134,23 @@ void QObjectPropertyModel::translatePropertyName()
     tr("condition");
     tr("groupFieldName");
     tr("keepGroupTogether");
+    tr("endlessHeight");
+    tr("extendedHeight");
+    tr("isExtendedInDesignMode");
+    tr("pageIsTOC");
+    tr("setPageSizeToPrinter");
+    tr("fillInSecondPass");
+    tr("chartTitle");
+    tr("chartType");
+    tr("drawLegendBorder");
+    tr("labelsField");
+    tr("legendAlign");
+    tr("series");
+    tr("titleAlign");
     tr("watermark");
+    tr("keepTopSpace");
+    tr("printable");
+    tr("variable");
 }
 
 void QObjectPropertyModel::clearObjectsList()
@@ -383,7 +399,7 @@ ObjectPropItem * QObjectPropertyModel::createPropertyItem(QMetaProperty prop, QO
                     0,
                     0,
                     QString(prop.name()),
-                    QString(prop.name()),
+                    QString(tr(prop.name())),
                     object->property(prop.name()),
                     parent
                  );

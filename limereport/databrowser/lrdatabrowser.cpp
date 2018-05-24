@@ -96,31 +96,10 @@ void DataBrowser::slotAddConnection()
 void DataBrowser::slotSQLEditingFinished(SQLEditResult result)
 {
     if (result.dialogMode==SQLEditDialog::AddMode) {
-        switch (result.resultMode) {
-        case SQLEditResult::Query:
-            addQuery(result);
-            break;
-        case SQLEditResult::SubQuery:
-            addSubQuery(result);
-            break;
-        case SQLEditResult::SubProxy:
-            addProxy(result);
-        default:
-            break;
-        }
+        addDatasource(result);
     } else {
-        switch(result.resultMode){
-        case SQLEditResult::Query:
-            changeQuery(result);
-            break;
-        case SQLEditResult::SubQuery:
-            changeSubQuery(result);
-            break;
-        case SQLEditResult::SubProxy:
-            changeProxy(result);
-        }
+        applyChanges(result);
     }
-
     updateDataTree();
 }
 
@@ -237,7 +216,7 @@ void DataBrowser::updateVariablesTree()
         }
     }
 
-    foreach(QString variableName,m_report->dataManager()->namesOfUserVariables()){
+    foreach(QString variableName,m_report->dataManager()->userVariableNames()){
         if (!m_report->dataManager()->variableNames().contains(variableName)){
             QStringList values;
             values<<variableName+"  ["+m_report->dataManager()->variable(variableName).toString()+"]"
@@ -277,7 +256,7 @@ QSettings *DataBrowser::settings()
     if (m_settings){
         return m_settings;
     } else {
-        m_settings = new QSettings("LimeReport",QApplication::applicationName());
+        m_settings = new QSettings("LimeReport",QCoreApplication::applicationName());
         m_ownedSettings = true;
         return m_settings;
     }
@@ -658,6 +637,50 @@ void DataBrowser::changeProxy(SQLEditResult result)
         m_report->dataManager()->addProxy(result.datasourceName,result.masterDatasource,result.childDataSource,result.fieldMap);
     } catch(ReportError &exception){
         qDebug()<<exception.what();
+    }
+}
+
+SQLEditResult::ResultMode DataBrowser::currentDatasourceType(const QString& datasourceName)
+{
+    if (m_report->dataManager()->isQuery(datasourceName)) return SQLEditResult::Query;
+    if (m_report->dataManager()->isSubQuery(datasourceName)) return SQLEditResult::SubQuery;
+    if (m_report->dataManager()->isProxy(datasourceName)) return SQLEditResult::SubProxy;
+    return SQLEditResult::Undefined;
+}
+
+
+void DataBrowser::applyChanges(SQLEditResult result)
+{
+    if (result.resultMode == currentDatasourceType(result.datasourceName)){
+        switch(result.resultMode){
+            case SQLEditResult::Query:
+                changeQuery(result);
+                break;
+            case SQLEditResult::SubQuery:
+                changeSubQuery(result);
+                break;
+            case SQLEditResult::SubProxy:
+                changeProxy(result);
+        }
+    } else {
+        removeDatasource(result.datasourceName);
+        addDatasource(result);
+    }
+}
+
+void DataBrowser::addDatasource(SQLEditResult result)
+{
+    switch (result.resultMode) {
+        case SQLEditResult::Query:
+            addQuery(result);
+            break;
+        case SQLEditResult::SubQuery:
+            addSubQuery(result);
+            break;
+        case SQLEditResult::SubProxy:
+            addProxy(result);
+        default:
+            break;
     }
 }
 

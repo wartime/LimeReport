@@ -53,6 +53,12 @@ class PageItemDesignIntf : public LimeReport::ItemsContainerDesignInft
     Q_PROPERTY(bool fullPage READ fullPage WRITE setFullPage)
     Q_PROPERTY(bool oldPrintMode READ oldPrintMode WRITE setOldPrintMode)
     Q_PROPERTY(bool resetPageNumber READ resetPageNumber WRITE setResetPageNumber)
+    Q_PROPERTY(bool isExtendedInDesignMode READ isExtendedInDesignMode WRITE setExtendedInDesignMode)
+    Q_PROPERTY(int  extendedHeight READ extendedHeight WRITE setExtendedHeight)
+    Q_PROPERTY(bool pageIsTOC READ isTOC WRITE setIsTOC)
+    Q_PROPERTY(bool setPageSizeToPrinter READ getSetPageSizeToPrinter WRITE setSetPageSizeToPrinter )
+    Q_PROPERTY(bool endlessHeight READ endlessHeight WRITE setEndlessHeight)
+    Q_PROPERTY(bool printable READ isPrintable WRITE setPrintable)
     friend class ReportRender;
 public:
     enum Orientation { Portrait, Landscape };
@@ -74,6 +80,7 @@ public:
     virtual QColor selectionColor() const;
     virtual QColor pageBorderColor() const;
     virtual QColor gridColor() const;
+    virtual QRectF boundingRect() const;
     void clear();
     const BandsList& childBands() const {return m_bands;}
     BandDesignIntf * bandByType(BandDesignIntf::BandsType bandType) const;
@@ -118,6 +125,25 @@ public:
     void setResetPageNumber(bool resetPageNumber);
     void updateSubItemsSize(RenderPass pass, DataSourceManager *dataManager);
 
+    bool isExtendedInDesignMode() const;
+    void setExtendedInDesignMode(bool isExtendedInDesignMode);
+    int  extendedHeight() const;
+    void setExtendedHeight(int extendedHeight);
+
+    bool isTOC() const;
+    void setIsTOC(bool isTOC);
+    bool getSetPageSizeToPrinter() const;
+    void setSetPageSizeToPrinter(bool setPageSizeToPrinter);
+
+    bool endlessHeight() const;
+    void setEndlessHeight(bool endlessHeight);
+
+    bool isPrintable() const;
+    void setPrintable(bool printable);
+
+signals:
+    void beforeFirstPageRendered();
+    void afterLastPageRendered();
 protected slots:
     void bandDeleted(QObject* band);
     void bandGeometryChanged(QObject* object, QRectF newGeometry, QRectF oldGeometry);
@@ -130,8 +156,9 @@ protected:
     void    initPageSize(const QSizeF &size);
     QColor  selectionMarkerColor(){return Qt::transparent;}
     void    preparePopUpMenu(QMenu &menu);
+    void    processPopUpAction(QAction *action);
 private:
-    void paintGrid(QPainter *ppainter);
+    void paintGrid(QPainter *ppainter, QRectF rect);
     void initColumnsPos(QVector<qreal>&posByColumns, qreal pos, int columnCount);
 private:
     int m_topMargin;
@@ -146,6 +173,12 @@ private:
     bool m_fullPage;
     bool m_oldPrintMode;
     bool m_resetPageNumber;
+    bool m_isExtendedInDesignMode;
+    int  m_extendedHeight;
+    bool m_isTOC;
+    bool m_setPageSizeToPrinter;
+    bool m_endlessHeight;
+    bool m_printable;
 };
 
 typedef QList<PageItemDesignIntf::Ptr> ReportPages;

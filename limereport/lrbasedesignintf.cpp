@@ -79,6 +79,8 @@ BaseDesignIntf::BaseDesignIntf(const QString &storageTypeName, QObject *owner, Q
     m_borderColor(Qt::black),
     m_reportSettings(0),
     m_patternName(""),
+    m_patternItem(0),
+    m_fillInSecondPass(false),
     m_watermark(false)
 {
     setGeometry(QRectF(0, 0, m_width, m_height));
@@ -364,11 +366,9 @@ void BaseDesignIntf::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
         m_resizeDirectionFlags = resizeDirectionFlags(event->pos());
-        //m_startScenePos = event->scenePos();
         m_startPos = pos();
         m_oldGeometry = geometry();
         QGraphicsItem::mousePressEvent(event);
-        //QApplication::processEvents();
         emit(itemSelected(this));
     }
     else QGraphicsItem::mousePressEvent(event);
@@ -704,6 +704,21 @@ void BaseDesignIntf::turnOnSelectionMarker(bool value)
     }
 }
 
+bool BaseDesignIntf::fillInSecondPass() const
+{
+    return m_fillInSecondPass;
+}
+
+void BaseDesignIntf::setFillInSecondPass(bool fillInSecondPass)
+{
+
+    if (m_fillInSecondPass != fillInSecondPass){
+        m_fillInSecondPass = fillInSecondPass;
+        notify("fillInSecondPass",!fillInSecondPass,fillInSecondPass);
+    }
+
+}
+
 bool BaseDesignIntf::isWatermark() const
 {
     return m_watermark;
@@ -725,6 +740,16 @@ QString BaseDesignIntf::patternName() const
 void BaseDesignIntf::setPatternName(const QString &patternName)
 {
     m_patternName = patternName;
+}
+
+BaseDesignIntf* BaseDesignIntf::patternItem() const
+{
+    return m_patternItem;
+}
+
+void BaseDesignIntf::setPatternItem(BaseDesignIntf *patternItem)
+{
+    m_patternItem = patternItem;
 }
 
 ReportSettings *BaseDesignIntf::reportSettings() const
@@ -1130,9 +1155,17 @@ void BaseDesignIntf::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
     }
 }
 
+QWidget* findRootWidget(QWidget* widget){
+    while (widget->parentWidget()) {
+        widget = widget->parentWidget();
+    }
+    return widget;
+}
+
 void BaseDesignIntf::showEditorDialog(){
-    QWidget *editor = defaultEditor();
+    QWidget *editor = defaultEditor(); 
     if (editor) {
+        editor->setStyleSheet(findRootWidget(scene()->views().at(0))->styleSheet());
 
 #ifdef Q_OS_WIN
         editor->setAttribute(Qt::WA_DeleteOnClose);
@@ -1152,6 +1185,7 @@ void BaseDesignIntf::showEditorDialog(){
         dialog->layout()->setContentsMargins(2,2,2,2);
         dialog->layout()->addWidget(editor);
         connect(editor,SIGNAL(destroyed()),dialog,SLOT(close()));
+        dialog->setWindowTitle(editor->windowTitle());
         dialog->exec();
 #endif
     }
@@ -1178,11 +1212,12 @@ void BaseDesignIntf::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     QMenu menu;
     QAction* copyAction = menu.addAction(QIcon(":/report/images/copy.png"), tr("Copy"));
     copyAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
-    QAction* cutAction = menu.addAction(QIcon(":/report//images/cut"), tr("Cut"));
+    QAction* cutAction = menu.addAction(QIcon(":/report/images/cut"), tr("Cut"));
     cutAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_X));
     QAction* pasteAction = menu.addAction(QIcon(":/report/images/paste.png"), tr("Paste"));
     pasteAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_V));
     pasteAction->setEnabled(false);
+
     QClipboard *clipboard = QApplication::clipboard();
     ItemsReaderIntf::Ptr reader = StringXMLreader::create(clipboard->text());
     if (reader->first() && reader->itemType() == "Object"){
@@ -1191,6 +1226,10 @@ void BaseDesignIntf::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     menu.addSeparator();
     QAction* brinToTopAction = menu.addAction(QIcon(":/report//images/bringToTop"), tr("Bring to top"));
     QAction* sendToBackAction = menu.addAction(QIcon(":/report//images/sendToBack"), tr("Send to back"));
+    QAction* createHLayout = 0;
+    if( page->selectedItems().count()>1){
+        createHLayout =  menu.addAction(QIcon(":/report/images/hlayout"), tr("Create Horizontal Layout"));
+    }
     menu.addSeparator();
     QAction* noBordersAction = menu.addAction(QIcon(":/report//images/noLines"), tr("No borders"));
     QAction* allBordersAction = menu.addAction(QIcon(":/report//images/allLines"), tr("All borders"));
@@ -1214,6 +1253,8 @@ void BaseDesignIntf::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
             page->setBorders(BaseDesignIntf::NoLine);
         if (a == allBordersAction)
             page->setBorders(BaseDesignIntf::AllLines);
+        if (a == createHLayout)
+            page->addHLayout();
         processPopUpAction(a);
     }
 }
@@ -1350,6 +1391,7 @@ BaseDesignIntf *BaseDesignIntf::cloneItem(ItemMode mode, QObject *owner, QGraphi
 {
     BaseDesignIntf *clone = cloneItemWOChild(mode, owner, parent);
     clone->setPatternName(this->objectName());
+    clone->setPatternItem(this);
 #ifdef HAVE_QT5
     foreach(QObject * child, children()) {
 #else
@@ -1426,6 +1468,21 @@ QList<BaseDesignIntf *> BaseDesignIntf::childBaseItems()
         BaseDesignIntf *baseItem = dynamic_cast<BaseDesignIntf *>(item);
         if (baseItem) resList << baseItem;
     }
+    return resList;
+}
+
+
+void BaseDesignIntf::addChildItems(QList<BaseDesignIntf*>* list){
+    foreach(BaseDesignIntf* item, childBaseItems()){
+        list->append(item);
+        item->addChildItems(list);
+    }
+}
+
+QList<BaseDesignIntf*> BaseDesignIntf::allChildBaseItems()
+{
+    QList<BaseDesignIntf *> resList;
+    addChildItems(&resList);
     return resList;
 }
 
@@ -1545,11 +1602,8 @@ BaseDesignIntf *Marker::object() const
     return m_object;
 }
 
+QMap<QString, QString> BaseDesignIntf::getStringForTranslation(){
+    return QMap<QString,QString>();
+}
+
 } //namespace LimeReport
-
-
-
-
-
-
-

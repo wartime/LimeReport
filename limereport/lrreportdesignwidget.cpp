@@ -33,6 +33,9 @@
 #include "lrreportengine_p.h"
 #include "lrbasedesignintf.h"
 #include "lrsettingdialog.h"
+#include "dialogdesigner/lrdialogdesigner.h"
+#include "translationeditor/translationeditor.h"
+#include "scripteditor/lrscripteditor.h"
 
 #include <QDebug>
 #include <QObject>
@@ -48,14 +51,18 @@ namespace LimeReport {
 
 // ReportDesignIntf
 
-ReportDesignWidget::ReportDesignWidget(ReportEnginePrivate *report, QMainWindow *mainWindow, QWidget *parent) :
-    QWidget(parent), m_mainWindow(mainWindow), m_verticalGridStep(10), m_horizontalGridStep(10), m_useGrid(false)
-{
-#ifdef HAVE_QT5
-    m_tabWidget = new QTabWidget(this);
+ReportDesignWidget::ReportDesignWidget(ReportEnginePrivateInterface* report, QMainWindow *mainWindow, QWidget *parent) :
+    QWidget(parent),
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    m_dialogDesignerManager(new DialogDesignerManager(this)),
 #endif
+    m_mainWindow(mainWindow), m_verticalGridStep(10), m_horizontalGridStep(10), m_useGrid(false), m_dialogChanged(false), m_useDarkTheme(false)
+{
 #ifdef HAVE_QT4
     m_tabWidget = new LimeReportTabWidget(this);
+#endif
+#ifdef HAVE_QT5
+    m_tabWidget = new QTabWidget(this);
 #endif
     m_tabWidget->setTabPosition(QTabWidget::South);
     m_tabWidget->setMovable(true);
@@ -65,29 +72,97 @@ ReportDesignWidget::ReportDesignWidget(ReportEnginePrivate *report, QMainWindow 
     mainLayout->addWidget(m_tabWidget);
     setLayout(mainLayout);
 
-    if (!report) {
-        m_report=new ReportEnginePrivate(this);
-        m_report->setObjectName("report");
-        m_report->appendPage("page1");
-    }
-    else {
-        m_report=report;
-        if (!m_report->pageCount()) m_report->appendPage("page1");
-    }
+    m_report=report;
+    if (!m_report->pageCount()) m_report->appendPage("page1");
 
     createTabs();
 
-    connect(m_report,SIGNAL(pagesLoadFinished()),this,SLOT(slotPagesLoadFinished()));
-    connect(m_report,SIGNAL(cleared()),this,SIGNAL(cleared()));
-    connect(m_tabWidget, SIGNAL(currentChanged(int)), this, SLOT(slotCurrentTabChanged(int)));
+    connect(dynamic_cast<QObject*>(m_report), SIGNAL(pagesLoadFinished()),this,SLOT(slotPagesLoadFinished()));
+    connect(dynamic_cast<QObject*>(m_report), SIGNAL(cleared()), this, SIGNAL(cleared()));
+    connect(dynamic_cast<QObject*>(m_report), SIGNAL(loaded()), this, SLOT(slotReportLoaded()));
 
+    connect(m_tabWidget, SIGNAL(currentChanged(int)), this, SLOT(slotCurrentTabChanged(int)));
+#ifdef HAVE_UI_LOADER
+    connect(m_report->scriptContext(), SIGNAL(dialogDeleted(QString)), this, SLOT(slotDialogDeleted(QString)));
+#endif
     //m_instance=this;
     m_scriptEditor->setPlainText(m_report->scriptContext()->initScript());
     m_zoomer = new GraphicsViewZoomer(activeView());
+
 #ifdef Q_OS_WIN
     m_defaultFont = QFont("Arial",10);
 #endif
+
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    connect(m_dialogDesignerManager, SIGNAL(dialogChanged(QString)),
+            this, SLOT(slotDialogChanged(QString)));
+    connect(m_dialogDesignerManager, SIGNAL(dialogNameChanged(QString,QString)),
+            this, SLOT(slotDialogNameChanged(QString,QString)));
+#endif
 }
+
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+DialogDesignerManager *ReportDesignWidget::dialogDesignerManager() const
+{
+    return m_dialogDesignerManager;
+}
+
+QString ReportDesignWidget::activeDialogName()
+{
+    if (activeDialogPage())
+     return activeDialogPage()->dialogName();
+    return "";
+}
+
+
+QWidget *ReportDesignWidget::toolWindow(ReportDesignWidget::ToolWindowType windowType)
+{
+    switch (windowType) {
+    case WidgetBox:
+        return dialogDesignerManager()->widgetBox();
+    case PropertyEditor:
+        return dialogDesignerManager()->propertyEditor();
+    case ObjectInspector:
+        return dialogDesignerManager()->objectInspector();
+    case ActionEditor:
+        return dialogDesignerManager()->actionEditor();
+    case ResourceEditor:
+        return dialogDesignerManager()->resourcesEditor();
+    case SignalSlotEditor:
+        return dialogDesignerManager()->signalSlotEditor();
+    default:
+        return 0;
+    }
+}
+
+#endif
+
+ReportDesignWidget::EditorTabType ReportDesignWidget::activeTabType()
+{
+    QString tabType = m_tabWidget->tabWhatsThis(m_tabWidget->currentIndex());
+    if ( tabType.compare("dialog") == 0) return Dialog;
+    if ( tabType.compare("script") == 0) return Script;
+    if ( tabType.compare("translations") == 0) return Translations;
+    return Page;
+}
+
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+
+void ReportDesignWidget::initDialogDesignerToolBar(QToolBar *toolBar)
+{
+    m_dialogDesignerManager->initToolBar(toolBar);
+}
+
+void ReportDesignWidget::updateDialogs()
+{
+    for ( int i = 0; i<m_tabWidget->count(); ++i ){
+        if (m_tabWidget->tabWhatsThis(i).compare("dialog") == 0){
+            m_report->scriptContext()->changeDialog(m_tabWidget->tabText(i), m_dialogDesignerManager->getDialogDescription(m_tabWidget->widget(i)));
+        }
+    }
+}
+
+#endif
 
 bool ReportDesignWidget::useMagnet() const
 {
@@ -109,6 +184,8 @@ void ReportDesignWidget::saveState(QSettings* settings)
     settings->setValue("vGridStep",m_verticalGridStep);
     settings->setValue("defaultFont",m_defaultFont);
     settings->setValue("useGrid",m_useGrid);
+    settings->setValue("useDarkTheme",m_useDarkTheme);
+    settings->setValue("ScriptEditorState", m_scriptEditor->saveState());
     settings->endGroup();
 }
 
@@ -118,6 +195,16 @@ void ReportDesignWidget::applySettings()
         m_report->pageAt(i)->pageItem()->setFont(m_defaultFont);
     }
     applyUseGrid();
+    if (m_useDarkTheme) {
+        QFile theme(":/qdarkstyle/style.qss");
+        theme.open(QIODevice::ReadOnly);
+        QString styleSheet = theme.readAll();
+        parentWidget()->setStyleSheet(styleSheet);
+        m_report->setStyleSheet(styleSheet);
+    } else {
+        parentWidget()->setStyleSheet("");
+        m_report->setStyleSheet("");
+    }
 }
 
 void ReportDesignWidget::loadState(QSettings* settings)
@@ -141,33 +228,82 @@ void ReportDesignWidget::loadState(QSettings* settings)
     if (v.isValid()){
         m_useGrid = v.toBool();
     }
+
+    v = settings->value("useDarkTheme");
+    if (v.isValid()){
+        m_useDarkTheme = v.toBool();
+    }
+
+    v = settings->value("ScriptEditorState");
+    if (v.isValid()){
+        m_scriptEditor->restoreState(v.toByteArray());
+    }
+
     settings->endGroup();
     applySettings();
 }
 
 
 void ReportDesignWidget::createTabs(){
+    m_tabWidget->clear();
+    int pageIndex  = -1;
     for (int i = 0; i<m_report->pageCount();++i){
         QGraphicsView* view = new QGraphicsView(qobject_cast<QWidget*>(this));
         view->setBackgroundBrush(QBrush(Qt::gray));
         view->setFrameShape(QFrame::NoFrame);
         view->setScene(m_report->pageAt(i));
 
-        foreach(QGraphicsItem* item, m_report->pageAt(i)->selectedItems()){
-            item->setSelected(false);
-        }
+//        foreach(QGraphicsItem* item, m_report->pageAt(i)->selectedItems()){
+//            item->setSelected(false);
+//        }
+
+        m_report->pageAt(i)->clearSelection();
 
         view->centerOn(0,0);
         view->scale(0.5,0.5);
         connectPage(m_report->pageAt(i));
-        m_tabWidget->addTab(view,QIcon(),m_report->pageAt(i)->pageItem()->objectName());
+        pageIndex = m_tabWidget->addTab(view,QIcon(),m_report->pageAt(i)->pageItem()->objectName());
+        m_tabWidget->setTabWhatsThis(pageIndex, "page");
         connect(m_report->pageAt(i)->pageItem(), SIGNAL(propertyObjectNameChanged(QString,QString)),
                 this, SLOT(slotPagePropertyObjectNameChanged(QString,QString)));
     }
-    m_scriptEditor = new QTextEdit(this);
-    m_tabWidget->addTab(m_scriptEditor,QIcon(),tr("Script"));
+
+    m_scriptEditor = new ScriptEditor(this);
+    m_scriptEditor->setReportEngine(m_report);
+    pageIndex = m_tabWidget->addTab(m_scriptEditor,QIcon(),tr("Script"));
+    m_tabWidget->setTabWhatsThis(pageIndex,"script");
     m_tabWidget->setCurrentIndex(0);
+
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    QWidget* dialogDesigner;
+    foreach(DialogDescriber::Ptr dialogDesc, m_report->scriptContext()->dialogDescribers()){
+        dialogDesigner = m_dialogDesignerManager->createFormEditor(dialogDesc->description());
+        pageIndex = m_tabWidget->addTab(dialogDesigner,QIcon(),dialogDesc->name());
+        m_tabWidget->setTabWhatsThis(pageIndex,"dialog");
+    }
+#endif
+
+    m_traslationEditor = new TranslationEditor(this);
+    pageIndex = m_tabWidget->addTab(m_traslationEditor,QIcon(),tr("Translations"));
+    m_tabWidget->setTabWhatsThis(pageIndex,"translations");
+
 }
+
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+void ReportDesignWidget::createNewDialogTab(const QString& dialogName, const QByteArray& description)
+{
+    QWidget* dialogDesigner = m_dialogDesignerManager->createFormEditor(description);
+    int pageIndex = m_tabWidget->addTab(dialogDesigner,QIcon(),dialogName);
+    m_tabWidget->setTabWhatsThis(pageIndex,"dialog");
+    m_tabWidget->setCurrentIndex(pageIndex);
+    m_dialogDesignerManager->setActiveEditor(dialogDesigner);
+}
+
+DialogDesigner*ReportDesignWidget::activeDialogPage()
+{
+    return dynamic_cast<DialogDesigner*>(m_tabWidget->currentWidget());
+}
+#endif
 
 ReportDesignWidget::~ReportDesignWidget()
 {
@@ -199,7 +335,6 @@ void ReportDesignWidget::connectPage(PageDesignIntf *page)
     connect(page, SIGNAL(pageUpdateFinished(LimeReport::PageDesignIntf*)),
             this, SIGNAL(activePageUpdated(LimeReport::PageDesignIntf*)));
 
-    //activeView()->centerOn(0,0);
     emit activePageChanged();
 }
 
@@ -242,7 +377,7 @@ void ReportDesignWidget::startEditMode()
 PageDesignIntf * ReportDesignWidget::activePage()
 {
     if (activeView())
-        return qobject_cast<PageDesignIntf*>(activeView()->scene());
+        return dynamic_cast<PageDesignIntf*>(activeView()->scene());
     return 0;
 }
 
@@ -266,43 +401,72 @@ void ReportDesignWidget::slotItemSelected(BaseDesignIntf *item){
     emit itemSelected(item);
 }
 
-void ReportDesignWidget::saveToFile(const QString &fileName){
+bool ReportDesignWidget::saveToFile(const QString &fileName){
+
+    bool result = false;
     prepareReport();
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    updateDialogs();
+#endif
+
     if (m_report->saveToFile(fileName)) {
-            m_report->emitSaveFinished();
+        m_report->emitSaveFinished();
+        result = true;
     }
+
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    if (result){
+        m_dialogChanged = false;
+        m_dialogDesignerManager->setDirty(false);
+    }
+#endif
+    return result;
 }
 
 bool ReportDesignWidget::save()
 {
     prepareReport();
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    updateDialogs();
+#endif
+
+    bool result = false;
+
     if (!m_report->reportFileName().isEmpty()){
         if (m_report->saveToFile()){
             m_report->emitSaveFinished();
-            return true;
+            result = true;
         }
     }
     else {
         m_report->emitSaveReport();
         if (m_report->isSaved()) {
             m_report->emitSaveFinished();
-            return true;
+            result = true;
         }
-        if (m_report->saveToFile(QFileDialog::getSaveFileName(this,tr("Report file name"),"","Report files (*.lrxml);; All files (*)"))){
+        else if (m_report->saveToFile(QFileDialog::getSaveFileName(this,tr("Report file name"),"","Report files (*.lrxml);; All files (*)"))){
             m_report->emitSaveFinished();
-            return true;
+            result = true;
         };
     }
-    return false;
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    if (result){
+        m_dialogChanged = false;
+        m_dialogDesignerManager->setDirty(false);
+    }
+#endif
+    return result;
 }
 
 bool ReportDesignWidget::loadFromFile(const QString &fileName)
 {
     if (m_report->loadFromFile(fileName,false)){
-        createTabs();
-        //connectPage(m_report->pageAt(0));
-        m_scriptEditor->setPlainText(m_report->scriptContext()->initScript());
-        emit loaded();
+//        QByteArray editorState = m_scriptEditor->saveState();
+//        createTabs();
+//        m_scriptEditor->setPlainText(m_report->scriptContext()->initScript());
+//        m_scriptEditor->restoreState(editorState);
+//        emit loaded();
+//        m_dialogChanged = false;
         return true;
     } else {
         QMessageBox::critical(this,tr("Error"),tr("Wrong file format"));
@@ -326,7 +490,7 @@ QString ReportDesignWidget::reportFileName()
 bool ReportDesignWidget::isNeedToSave()
 {
     if(m_report)
-        return m_report->isNeedToSave();
+        return (m_report->isNeedToSave() || m_dialogChanged);
     return false;
 }
 
@@ -345,12 +509,20 @@ void ReportDesignWidget::undo()
 {
     if (activePage())
         activePage()->undo();
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    if (activeDialogPage())
+        activeDialogPage()->undo();
+#endif
 }
 
 void ReportDesignWidget::redo()
 {
     if (activePage())
         activePage()->redo();
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    if (activeDialogPage())
+        activeDialogPage()->redo();
+#endif
 }
 
 void ReportDesignWidget::copy()
@@ -473,12 +645,18 @@ void ReportDesignWidget::prepareReport()
 void ReportDesignWidget::previewReport()
 {
     prepareReport();
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    updateDialogs();
+#endif
     report()->previewReport();
 }
 
 void ReportDesignWidget::printReport()
 {
     prepareReport();
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    updateDialogs();
+#endif
     setCursor(Qt::WaitCursor);
     report()->printReport();
     setCursor(Qt::ArrowCursor);
@@ -528,12 +706,18 @@ void ReportDesignWidget::editSetting()
     setting.setHorizontalGridStep(m_horizontalGridStep);
     setting.setDefaultFont(m_defaultFont);
     setting.setSuppressAbsentFieldsAndVarsWarnings(m_report->suppressFieldAndVarError());
+    setting.setUseDarkTheme(m_useDarkTheme);
+    setting.setDesignerLanguages(m_report->designerLanguages(), m_report->currentDesignerLanguage());
 
     if (setting.exec()){
         m_horizontalGridStep = setting.horizontalGridStep();
         m_verticalGridStep = setting.verticalGridStep();
         m_defaultFont = setting.defaultFont();
+        m_useDarkTheme = setting.userDarkTheme();
         m_report->setSuppressFieldAndVarError(setting.suppressAbsentFieldsAndVarsWarnings());
+        if (m_report->currentDesignerLanguage() != setting.designerLanguage() ){
+            m_report->setCurrentDesignerLanguage(setting.designerLanguage());
+        }
         applySettings();
     }
 }
@@ -605,6 +789,16 @@ void ReportDesignWidget::slotPagesLoadFinished()
     emit loaded();
 }
 
+void ReportDesignWidget::slotDialogDeleted(QString dialogName)
+{
+    for (int i = 0; i<m_tabWidget->count(); ++i ){
+        if (m_tabWidget->tabText(i).compare(dialogName) == 0){
+            delete m_tabWidget->widget(i);
+            break;
+        }
+    }
+}
+
 void ReportDesignWidget::slotDatasourceCollectionLoaded(const QString & /*collectionName*/)
 {
 }
@@ -619,12 +813,69 @@ void ReportDesignWidget::slotCurrentTabChanged(int index)
     QGraphicsView* view = dynamic_cast<QGraphicsView*>(m_tabWidget->widget(index));
     if (view) {
         if (view->scene()){
-            foreach (QGraphicsItem* item, view->scene()->selectedItems()) item->setSelected(false);
+            //foreach (QGraphicsItem* item, view->scene()->selectedItems()) item->setSelected(false);
+            view->scene()->clearSelection();
         }
         m_zoomer->setView(view);
     }
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+    if (activeTabType() == Dialog){
+        m_dialogDesignerManager->setActiveEditor(m_tabWidget->widget(index));
+    }
+    updateDialogs();
+#endif
+    if (activeTabType() == Translations){
+        m_traslationEditor->setReportEngine(dynamic_cast<ITranslationContainer*>(report()));
+    }
+
+    if (activeTabType() == Script){
+        m_scriptEditor->initCompleter();
+        m_scriptEditor->setFocus();
+    }
+
     emit activePageChanged();
+
+    if (view) view->centerOn(0,0);
 }
+
+void ReportDesignWidget::slotReportLoaded()
+{
+    QByteArray editorState = m_scriptEditor->saveState();
+    createTabs();
+    m_scriptEditor->setPlainText(m_report->scriptContext()->initScript());
+    m_scriptEditor->restoreState(editorState);
+    emit loaded();
+    m_dialogChanged = false;
+}
+
+#ifdef HAVE_QTDESIGNER_INTEGRATION
+
+void ReportDesignWidget::addNewDialog()
+{
+    QFile templateUi(":/templates/templates/Dialog.ui");
+    templateUi.open(QIODevice::ReadOnly|QIODevice::Text);
+    QString templateStr = templateUi.readAll();
+    QString dialogName = m_report->scriptContext()->getNewDialogName();
+    templateStr.replace("$ClassName$", dialogName);
+    m_report->scriptContext()->addDialog(dialogName,templateStr.toUtf8());
+    createNewDialogTab(dialogName, templateStr.toUtf8());
+}
+
+void ReportDesignWidget::slotDialogChanged(QString )
+{
+    m_dialogChanged = true;
+}
+
+void ReportDesignWidget::slotDialogNameChanged(QString oldName, QString newName)
+{
+    for (int i = 0; i < m_tabWidget->count(); ++i){
+        if (m_tabWidget->tabText(i).compare(oldName) == 0)
+            m_tabWidget->setTabText(i, newName);
+    }
+    m_report->scriptContext()->changeDialogName(oldName, newName);
+}
+
+#endif
 
 void ReportDesignWidget::slotPagePropertyObjectNameChanged(const QString &oldValue, const QString &newValue)
 {

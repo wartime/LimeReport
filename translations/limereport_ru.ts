@@ -2,6 +2,60 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="ru_RU">
 <context>
+    <name>$ClassName$</name>
+    <message>
+        <source>$ClassName$</source>
+        <translation>$ClassName$</translation>
+    </message>
+</context>
+<context>
+    <name>ChartItemEditor</name>
+    <message>
+        <source>Series editor</source>
+        <translation>Редактор рядов данных</translation>
+    </message>
+    <message>
+        <source>Series</source>
+        <translation>Ряд</translation>
+    </message>
+    <message>
+        <source>Add</source>
+        <translation>Добавить</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Удалить</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Имя</translation>
+    </message>
+    <message>
+        <source>Values field</source>
+        <translation>Поле значений</translation>
+    </message>
+    <message>
+        <source>Color</source>
+        <translation>Цвет</translation>
+    </message>
+    <message>
+        <source>Type</source>
+        <translation>Тип</translation>
+    </message>
+    <message>
+        <source>Labels field</source>
+        <translation>Поле меток</translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation>Ок</translation>
+    </message>
+    <message>
+        <source>Series name</source>
+        <translation>Название ряда</translation>
+    </message>
+</context>
+<context>
     <name>LRVariableDialog</name>
     <message>
         <source>Variable</source>
@@ -9,7 +63,7 @@
     </message>
     <message>
         <source>Name</source>
-        <translation>Имя переменной</translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <source>Value</source>
@@ -22,6 +76,21 @@
     <message>
         <source>Attention</source>
         <translation>Внимание</translation>
+    </message>
+    <message>
+        <source>Mandatory</source>
+        <translation>Обязательная</translation>
+    </message>
+</context>
+<context>
+    <name>LanguageSelectDialog</name>
+    <message>
+        <source>Dialog</source>
+        <translation>Диалог</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>Язык</translation>
     </message>
 </context>
 <context>
@@ -78,7 +147,19 @@ p, li { white-space: pre-wrap; }
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.&lt;/span&gt;&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:10pt; font-weight:600; color:#000000;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright 2015 Arin Alexander. All rights reserved.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation></translation>
+        <translation type="unfinished">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Sans Serif&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;img src=&quot;:/report/images/logo_100.png&quot; height=&quot;100&quot; style=&quot;float: left;&quot; /&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Генератор отчетов для &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:600; color:#7faa18;&quot;&gt;Qt&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt; framework&lt;/span&gt;&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;LimeReport - кросс-платформенная С++ библиотека, написанная с использованием Qt framework и предназначенная для разработчиков программного обеспечения, которые хотят добавить в свое Qt приложение возможность формирования отчетов или печатных форм, генерируемых на основании шаблона.&lt;/span&gt;&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:11pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:11pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Официальный веб-сайт : &lt;/span&gt;&lt;a href=&quot;www.limereport.ru&quot;&gt;&lt;span style=&quot; font-size:11pt; text-decoration: underline; color:#0000ff;&quot;&gt;www.limereport.ru&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:11pt; text-decoration: underline; color:#0000ff;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Эта библиотека распространяется в надежде, что она будет полезна, но БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ; даже без подразумеваемой гарантии КОММЕРЧЕСКОЙ ЦЕННОСТИ или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННОЙ ЦЕЛИ.&lt;/span&gt;&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:10pt; font-weight:600; color:#000000;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright 2015 Arin Alexander. Все права защищены.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -226,11 +307,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>horizontal</source>
-        <translation>горизонтально</translation>
+        <translation>Горизонтально</translation>
     </message>
     <message>
         <source>vertical</source>
-        <translation>вертикально</translation>
+        <translation>Вертикально</translation>
     </message>
 </context>
 <context>
@@ -276,28 +357,12 @@ p, li { white-space: pre-wrap; }
         <translation>Нижний колонтитул</translation>
     </message>
     <message>
-        <source>Subdetail</source>
-        <translation type="obsolete">Подчиненный</translation>
-    </message>
-    <message>
         <source>DataHeaderBand</source>
         <translation>Заголовок данных</translation>
     </message>
     <message>
         <source>DataFooterBand</source>
         <translation>Завершение данных</translation>
-    </message>
-    <message>
-        <source>SubdetailBand</source>
-        <translation type="vanished">Подчиненные данные</translation>
-    </message>
-    <message>
-        <source>SubdetailHeaderBand</source>
-        <translation type="vanished">Заголовок подчиненных данных</translation>
-    </message>
-    <message>
-        <source>SubdetailFooterBand</source>
-        <translation type="vanished">Завершение подчиненных данных</translation>
     </message>
     <message>
         <source>GroupBandHeader</source>
@@ -309,7 +374,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>TearOffBand</source>
-        <translation>Полоса для отрывания</translation>
+        <translation>Полоса отрыва</translation>
     </message>
     <message>
         <source>SubDetailBand</source>
@@ -325,15 +390,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Keep bottom space</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранять отступ снизу</translation>
     </message>
     <message>
         <source>Start from new page</source>
-        <translation type="unfinished"></translation>
+        <translation>Начинать с новой страницы</translation>
     </message>
     <message>
         <source>Start new page</source>
-        <translation type="unfinished"></translation>
+        <translation>Начинать новую страницу</translation>
+    </message>
+    <message>
+        <source>Keep top space</source>
+        <translation>Сохранять отступ сверху</translation>
     </message>
 </context>
 <context>
@@ -365,6 +434,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>All borders</source>
         <translation>Внешние границы</translation>
+    </message>
+    <message>
+        <source>Create Horizontal Layout</source>
+        <translation>Создать Горизонтальную Компановку</translation>
     </message>
 </context>
 <context>
@@ -446,7 +519,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Dont keep credentals in lrxml</source>
-        <translation>Не хранить логин с паролем в lrxml</translation>
+        <translation>Не хранить учетные данные в lrxml</translation>
     </message>
     <message>
         <source>defaultConnection</source>
@@ -458,14 +531,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Port</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>LimeReport::ContentItemDesignIntf</name>
-    <message>
-        <source>Variable %1 not found</source>
-        <translation type="vanished">Переменная %1 не найдена</translation>
+        <translation>Порт</translation>
     </message>
 </context>
 <context>
@@ -475,8 +541,8 @@ p, li { white-space: pre-wrap; }
         <translation>Данные</translation>
     </message>
     <message>
-        <source>useAlternateBackgroundColor</source>
-        <translation type="vanished">Использовать альтернативный цвет фона</translation>
+        <source>Use alternate background color</source>
+        <translation>Использовать альтернативный цвет фона</translation>
     </message>
 </context>
 <context>
@@ -534,16 +600,12 @@ p, li { white-space: pre-wrap; }
         <translation>Системные переменные</translation>
     </message>
     <message>
-        <source>User variables</source>
-        <translation type="vanished">Пользовательские переменные</translation>
-    </message>
-    <message>
         <source>Error</source>
         <translation>Ошибка</translation>
     </message>
     <message>
         <source>...</source>
-        <translation></translation>
+        <translation>...</translation>
     </message>
     <message>
         <source>Grab variable</source>
@@ -559,7 +621,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Do you really want to delete &quot;%1&quot; connection?</source>
-        <translation>Вы действительно хотите удалить &quot;%1&quot; соединение?</translation>
+        <translation>Вы действительно хотите удалить соединение &quot;%1&quot;?</translation>
     </message>
     <message>
         <source>Do you really want to delete &quot;%1&quot; datasource?</source>
@@ -574,7 +636,7 @@ p, li { white-space: pre-wrap; }
     <name>LimeReport::DataFooterBand</name>
     <message>
         <source>DataFooter</source>
-        <translation>Подвал данных</translation>
+        <translation>Завершение данных</translation>
     </message>
 </context>
 <context>
@@ -607,20 +669,12 @@ p, li { white-space: pre-wrap; }
         <translation>Источник данных &quot;%1&quot; не найден!</translation>
     </message>
     <message>
-        <source>connection with name &quot;%1&quot; already exists!</source>
-        <translation type="vanished">соединение &quot;%1&quot; уже существует!</translation>
-    </message>
-    <message>
-        <source>datasource with name &quot;%1&quot; already exists!</source>
-        <translation type="vanished">источник данных &quot;%1&quot; уже существует!</translation>
-    </message>
-    <message>
         <source>Connection with name &quot;%1&quot; already exists!</source>
         <translation>Соединение &quot;%1&quot; уже существует!</translation>
     </message>
     <message>
         <source>Datasource with name &quot;%1&quot; already exists!</source>
-        <translation>Источник данных с именем: &quot;%1&quot; уже существует!</translation>
+        <translation>Источник данных &quot;%1&quot; уже существует!</translation>
     </message>
 </context>
 <context>
@@ -642,31 +696,31 @@ p, li { white-space: pre-wrap; }
     <name>LimeReport::DialogDesignerManager</name>
     <message>
         <source>Edit Widgets</source>
-        <translation type="vanished">Редактировать виджеты</translation>
+        <translation>Панель Инструментов</translation>
     </message>
     <message>
         <source>Widget Box</source>
-        <translation type="vanished">Панель виджетов</translation>
+        <translation>Панель Виджетов</translation>
     </message>
     <message>
         <source>Object Inspector</source>
-        <translation type="vanished">Инспектор объектов</translation>
+        <translation>Инспектор Объектов</translation>
     </message>
     <message>
         <source>Property Editor</source>
-        <translation type="vanished">Редактор свойств</translation>
+        <translation>Редактор Свойств</translation>
     </message>
     <message>
         <source>Signals &amp;&amp; Slots Editor</source>
-        <translation type="vanished">Редактор сигналов и слотов</translation>
+        <translation>Редактор Сигналов и Свойств</translation>
     </message>
     <message>
         <source>Resource Editor</source>
-        <translation type="vanished">Редактор ресурсов</translation>
+        <translation>Обозреватель Ресурсов</translation>
     </message>
     <message>
         <source>Action Editor</source>
-        <translation type="vanished">Редактор действий</translation>
+        <translation>Редактор Действий</translation>
     </message>
 </context>
 <context>
@@ -685,15 +739,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>NoneAutoWidth</source>
-        <translation type="unfinished">Нет</translation>
+        <translation>Нет</translation>
     </message>
     <message>
         <source>MaxWordLength</source>
-        <translation type="unfinished">По ширине слова</translation>
+        <translation>По ширине слова</translation>
     </message>
     <message>
         <source>MaxStringLength</source>
-        <translation type="unfinished">По ширине строки</translation>
+        <translation>По ширине строки</translation>
     </message>
     <message>
         <source>TransparentMode</source>
@@ -701,7 +755,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>OpaqueMode</source>
-        <translation>Заливка</translation>
+        <translation>Непрозрачный</translation>
     </message>
     <message>
         <source>Angle0</source>
@@ -737,71 +791,71 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>NoBrush</source>
-        <translation>Нет заливки</translation>
+        <translation>Нет заполнения</translation>
     </message>
     <message>
         <source>SolidPattern</source>
-        <translation>Сплошная заливка</translation>
+        <translation>Сплошное заполнение</translation>
     </message>
     <message>
         <source>Dense1Pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Плотное заполнение 1</translation>
     </message>
     <message>
         <source>Dense2Pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Плотное заполнение 2</translation>
     </message>
     <message>
         <source>Dense3Pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Плотное заполнение 3</translation>
     </message>
     <message>
         <source>Dense4Pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Плотное заполнение 4</translation>
     </message>
     <message>
         <source>Dense5Pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Плотное заполнение 5</translation>
     </message>
     <message>
         <source>Dense6Pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Плотное заполнение 6</translation>
     </message>
     <message>
         <source>Dense7Pattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Плотное заполнение 7</translation>
     </message>
     <message>
         <source>HorPattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Горизонтальное заполнение</translation>
     </message>
     <message>
         <source>VerPattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Вертикальное заполнение</translation>
     </message>
     <message>
         <source>CrossPattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Перекрестное заполнение</translation>
     </message>
     <message>
         <source>BDiagPattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Обратное диагональное заполнение</translation>
     </message>
     <message>
         <source>FDiagPattern</source>
-        <translation type="unfinished"></translation>
+        <translation>Прямое диагональное заполнение</translation>
     </message>
     <message>
         <source>LeftToRight</source>
-        <translation>Слева на право</translation>
+        <translation>Слева направо</translation>
     </message>
     <message>
         <source>RightToLeft</source>
-        <translation>С права на лево</translation>
+        <translation>Справа налево</translation>
     </message>
     <message>
         <source>LayoutDirectionAuto</source>
-        <translation>Авто</translation>
+        <translation>Автоматически</translation>
     </message>
     <message>
         <source>LeftItemAlign</source>
@@ -833,7 +887,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Ellipse</source>
-        <translation>Элипс</translation>
+        <translation>Эллипс</translation>
     </message>
     <message>
         <source>Rectangle</source>
@@ -859,6 +913,42 @@ p, li { white-space: pre-wrap; }
         <source>VerticalUniform</source>
         <translation>Вертикально равномерно</translation>
     </message>
+    <message>
+        <source>Pie</source>
+        <translation>Круговая</translation>
+    </message>
+    <message>
+        <source>VerticalBar</source>
+        <translation>Вертикальная панель</translation>
+    </message>
+    <message>
+        <source>HorizontalBar</source>
+        <translation>Горизонтальная панель</translation>
+    </message>
+    <message>
+        <source>LegendAlignTop</source>
+        <translation>Легенда сверху</translation>
+    </message>
+    <message>
+        <source>LegendAlignCenter</source>
+        <translation>Легенда по центру</translation>
+    </message>
+    <message>
+        <source>LegendAlignBottom</source>
+        <translation>Легенда снизу</translation>
+    </message>
+    <message>
+        <source>TitleAlignLeft</source>
+        <translation>Название слева</translation>
+    </message>
+    <message>
+        <source>TitleAlignRight</source>
+        <translation>Название справа</translation>
+    </message>
+    <message>
+        <source>TitleAlignCenter</source>
+        <translation>Название по центру</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::FlagsPropItem</name>
@@ -881,6 +971,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>RightLine</source>
         <translation>Правая граница</translation>
+    </message>
+    <message>
+        <source>AllLines</source>
+        <translation>Внешние границы</translation>
     </message>
 </context>
 <context>
@@ -925,7 +1019,7 @@ p, li { white-space: pre-wrap; }
     <name>LimeReport::GroupBandFooter</name>
     <message>
         <source>GroupFooter</source>
-        <translation>Подвал группы</translation>
+        <translation>Завершение группы</translation>
     </message>
 </context>
 <context>
@@ -959,7 +1053,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Wrong script syntax &quot;%1&quot; </source>
-        <translation>Неправильный синтаксис скрипта &quot;%1&quot; </translation>
+        <translation>Неверный синтаксис скрипта &quot;%1&quot; </translation>
     </message>
 </context>
 <context>
@@ -967,6 +1061,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Image</source>
         <translation>Изображение</translation>
+    </message>
+    <message>
+        <source>Watermark</source>
+        <translation>Водный знак</translation>
     </message>
 </context>
 <context>
@@ -1081,6 +1179,14 @@ p, li { white-space: pre-wrap; }
         <source>Page Footer</source>
         <translation>Нижний колонтитул</translation>
     </message>
+    <message>
+        <source>Print on first page</source>
+        <translation>Печатать на первой странице</translation>
+    </message>
+    <message>
+        <source>Print on last page</source>
+        <translation>Печатать на последней странице</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::PageHeader</name>
@@ -1094,6 +1200,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Paste</source>
         <translation>Вставить</translation>
+    </message>
+    <message>
+        <source>Page is TOC</source>
+        <translation>Содержание отчета</translation>
+    </message>
+    <message>
+        <source>Reset page number</source>
+        <translation>Сбросить номер страницы</translation>
+    </message>
+    <message>
+        <source>Full page</source>
+        <translation>На всю страницу</translation>
+    </message>
+    <message>
+        <source>Set page size to printer</source>
+        <translation>Отправить параметры страницы в принтер</translation>
     </message>
 </context>
 <context>
@@ -1166,10 +1288,6 @@ p, li { white-space: pre-wrap; }
         <translation>Первая страница</translation>
     </message>
     <message>
-        <source>First page</source>
-        <translation>Первая страница</translation>
-    </message>
-    <message>
         <source>Last Page</source>
         <translation>Последняя страница</translation>
     </message>
@@ -1187,7 +1305,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Preview</source>
-        <translation>Предпросмотр</translation>
+        <translation>Предосмотр</translation>
     </message>
     <message>
         <source>Ctrl+P</source>
@@ -1214,10 +1332,6 @@ p, li { white-space: pre-wrap; }
         <translation>Показать панель инструментов</translation>
     </message>
     <message>
-        <source>Show toolbar</source>
-        <translation>Показать панель иструментов</translation>
-    </message>
-    <message>
         <source>Font</source>
         <translation>Шрифт</translation>
     </message>
@@ -1225,12 +1339,20 @@ p, li { white-space: pre-wrap; }
         <source>Text align</source>
         <translation>Выравнивание текста</translation>
     </message>
+    <message>
+        <source>First page</source>
+        <translation>Первая страница</translation>
+    </message>
+    <message>
+        <source>Show toolbar</source>
+        <translation>Показать панель инструментов</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::ProxyHolder</name>
     <message>
         <source>Datasource has been invalidated</source>
-        <translation>Источник данных находится в недействительном состоянии</translation>
+        <translation>Источник данных недействителен</translation>
     </message>
 </context>
 <context>
@@ -1238,10 +1360,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Property Name</source>
         <translation>Свойство</translation>
-    </message>
-    <message>
-        <source>Property value</source>
-        <translation>Значение</translation>
     </message>
     <message>
         <source>fullPage</source>
@@ -1557,15 +1675,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>columnCount</source>
-        <translation>Количество колонок</translation>
-    </message>
-    <message>
-        <source>alternateBackgroundMode</source>
-        <translation type="obsolete">Альтернативный цвет фона</translation>
-    </message>
-    <message>
-        <source>textIdent</source>
-        <translation type="obsolete">Параграф</translation>
+        <translation>Количество столбцов</translation>
     </message>
     <message>
         <source>securityLevel</source>
@@ -1589,7 +1699,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>layoutType</source>
-        <translation>Тип группировки</translation>
+        <translation>Тип компановки</translation>
     </message>
     <message>
         <source>barcodeType</source>
@@ -1597,7 +1707,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>barcodeWidth</source>
-        <translation type="unfinished"></translation>
+        <translation>Ширина штрихкода</translation>
     </message>
     <message>
         <source>foregroundColor</source>
@@ -1605,11 +1715,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>inputMode</source>
-        <translation type="unfinished"></translation>
+        <translation>Режим ввода</translation>
     </message>
     <message>
         <source>pdf417CodeWords</source>
-        <translation type="unfinished"></translation>
+        <translation>Слов pdf417</translation>
     </message>
     <message>
         <source>useAlternateBackgroundColor</source>
@@ -1634,6 +1744,78 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>repeatOnEachRow</source>
         <translation>Печатать на каждой странице</translation>
+    </message>
+    <message>
+        <source>Property value</source>
+        <translation>Значение</translation>
+    </message>
+    <message>
+        <source>endlessHeight</source>
+        <translation>Бесконечная высота</translation>
+    </message>
+    <message>
+        <source>extendedHeight</source>
+        <translation>Увеличенная высота</translation>
+    </message>
+    <message>
+        <source>isExtendedInDesignMode</source>
+        <translation>Увеличить в режиме редактирования</translation>
+    </message>
+    <message>
+        <source>pageIsTOC</source>
+        <translation>Содержание отчета</translation>
+    </message>
+    <message>
+        <source>setPageSizeToPrinter</source>
+        <translation>Оправитьпараметры страницы в принтер</translation>
+    </message>
+    <message>
+        <source>fillInSecondPass</source>
+        <translation>Заполнять вторым проходом</translation>
+    </message>
+    <message>
+        <source>chartTitle</source>
+        <translation>Заголовок диаграммы</translation>
+    </message>
+    <message>
+        <source>chartType</source>
+        <translation>Тип диаграммы</translation>
+    </message>
+    <message>
+        <source>drawLegendBorder</source>
+        <translation>Отображать границы Легенды</translation>
+    </message>
+    <message>
+        <source>labelsField</source>
+        <translation>Поле меток</translation>
+    </message>
+    <message>
+        <source>legendAlign</source>
+        <translation>Расположение легенды</translation>
+    </message>
+    <message>
+        <source>series</source>
+        <translation>Ряд данных</translation>
+    </message>
+    <message>
+        <source>titleAlign</source>
+        <translation>Расположение Названия</translation>
+    </message>
+    <message>
+        <source>watermark</source>
+        <translation>водяной знак</translation>
+    </message>
+    <message>
+        <source>keepTopSpace</source>
+        <translation>Сохранять отступ сверху</translation>
+    </message>
+    <message>
+        <source>printable</source>
+        <translation>Печатать</translation>
+    </message>
+    <message>
+        <source>variable</source>
+        <translation>Переменная</translation>
     </message>
 </context>
 <context>
@@ -1665,10 +1847,6 @@ p, li { white-space: pre-wrap; }
         <translation>Файл отчета</translation>
     </message>
     <message>
-        <source>Page</source>
-        <translation type="vanished">Страница</translation>
-    </message>
-    <message>
         <source>Script</source>
         <translation>Скрипт</translation>
     </message>
@@ -1678,7 +1856,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Wrong file format</source>
-        <translation>Неправильный формат файла</translation>
+        <translation>Неверный формат файла</translation>
+    </message>
+    <message>
+        <source>Translations</source>
+        <translation>Переводы</translation>
     </message>
 </context>
 <context>
@@ -1761,23 +1943,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Edit layouts mode</source>
-        <translation>Режим редактирования группировок</translation>
+        <translation>Режим редактирования компановок</translation>
     </message>
     <message>
         <source>Horizontal layout</source>
-        <translation>Горизонтальная группировка</translation>
+        <translation>Горизонтальная компановка</translation>
     </message>
     <message>
         <source>About</source>
         <translation>О программе</translation>
-    </message>
-    <message>
-        <source>Hide left panel</source>
-        <translation type="vanished">Спрятать левую панель</translation>
-    </message>
-    <message>
-        <source>Hide right panel</source>
-        <translation type="vanished">Спрятать правую панель</translation>
     </message>
     <message>
         <source>Report Tools</source>
@@ -1857,7 +2031,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Tear-off Band</source>
-        <translation>Полоса для отрывания</translation>
+        <translation>Полоса отрыва</translation>
     </message>
     <message>
         <source>File</source>
@@ -1920,48 +2094,48 @@ p, li { white-space: pre-wrap; }
         <translation>Файл &quot;%1&quot; не найден!</translation>
     </message>
     <message>
-        <source>Delete dialog</source>
-        <translation type="vanished">Удалить диалог</translation>
-    </message>
-    <message>
-        <source>Add new dialog</source>
-        <translation type="vanished">Добавить диалог</translation>
-    </message>
-    <message>
-        <source>Widget Box</source>
-        <translation type="vanished">Панель виджетов</translation>
-    </message>
-    <message>
-        <source>Property Editor</source>
-        <translation type="vanished">Редактор свойств</translation>
-    </message>
-    <message>
-        <source>Action Editor</source>
-        <translation type="vanished">Редактор действий</translation>
-    </message>
-    <message>
-        <source>Resource Editor</source>
-        <translation type="vanished">Редактор ресурсов</translation>
-    </message>
-    <message>
-        <source>SignalSlot Editor</source>
-        <translation type="vanished">Редактор сигналов и слотов</translation>
-    </message>
-    <message>
-        <source>Dialog Designer Tools</source>
-        <translation type="vanished">Инструменты создания диалогов</translation>
-    </message>
-    <message>
         <source>Report has been modified! Do you want save the report?</source>
-        <translation>Отчет был изменен! Хотите его сохранить?</translation>
+        <translation>Отчет был изменен! Сохранить изменения?</translation>
     </message>
     <message>
         <source>Hide left panel | Alt+L</source>
-        <translation type="unfinished"></translation>
+        <translation>Спрятать левую панель | Alt+L</translation>
     </message>
     <message>
         <source>Hide right panel | Alt+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Спрятать правую панель | Alt+R</translation>
+    </message>
+    <message>
+        <source>Delete dialog</source>
+        <translation>Удалить диалог</translation>
+    </message>
+    <message>
+        <source>Add new dialog</source>
+        <translation>Добавить диалог</translation>
+    </message>
+    <message>
+        <source>Widget Box</source>
+        <translation>Панель Виджетов</translation>
+    </message>
+    <message>
+        <source>Property Editor</source>
+        <translation>Редактор Свойств</translation>
+    </message>
+    <message>
+        <source>Action Editor</source>
+        <translation>Редактор Действий</translation>
+    </message>
+    <message>
+        <source>Resource Editor</source>
+        <translation>Обозреватель Ресурсов</translation>
+    </message>
+    <message>
+        <source>SignalSlot Editor</source>
+        <translation>Редактор Сигналов и Слотов</translation>
+    </message>
+    <message>
+        <source>Dialog Designer Tools</source>
+        <translation>Панель Инструментов</translation>
     </message>
 </context>
 <context>
@@ -1983,6 +2157,14 @@ p, li { white-space: pre-wrap; }
 
 This preview is no longer valid.</source>
         <translation>Файл отчета &quot;%1&quot; изменил имя или был удален.</translation>
+    </message>
+    <message>
+        <source>Designer not found!</source>
+        <translation>Дизайнер не найден!</translation>
+    </message>
+    <message>
+        <source>Language %1 already exists</source>
+        <translation>Язык %1 уже существует</translation>
     </message>
 </context>
 <context>
@@ -2007,11 +2189,11 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>Databand &quot;%1&quot; not found</source>
-        <translation>Банд &quot;%1&quot; не найден</translation>
+        <translation>Раздел &quot;%1&quot; не найден</translation>
     </message>
     <message>
         <source>Wrong using function %1</source>
-        <translation>Не правильное использование функции %1</translation>
+        <translation>Неверное использование функции %1</translation>
     </message>
     <message>
         <source>page index out of range</source>
@@ -2077,10 +2259,6 @@ This preview is no longer valid.</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <source>Datasource with name %1 already exist</source>
-        <translation>Источник данных с именем: &quot;%1&quot; уже существует</translation>
-    </message>
-    <message>
         <source>Attention</source>
         <translation>Внимание</translation>
     </message>
@@ -2098,7 +2276,7 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>...</source>
-        <translation></translation>
+        <translation>...</translation>
     </message>
     <message>
         <source>Ok</source>
@@ -2110,7 +2288,7 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>Datasource Name is empty!</source>
-        <translation>Имя источника данных не заполнено!</translation>
+        <translation>Имя источника данных не указано!</translation>
     </message>
     <message>
         <source>SQL is empty!</source>
@@ -2118,7 +2296,11 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>Datasource with name: &quot;%1&quot; already exists!</source>
-        <translation>Источник данных с именем: &quot;%1&quot; уже существует!</translation>
+        <translation>Источник данных %1 уже существует!</translation>
+    </message>
+    <message>
+        <source>Datasource with name %1 already exist</source>
+        <translation>Источник данных %1 уже существует</translation>
     </message>
 </context>
 <context>
@@ -2145,7 +2327,7 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>Name</source>
-        <translation>Имя переменной</translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <source>NO CATEGORY</source>
@@ -2156,38 +2338,49 @@ This preview is no longer valid.</source>
         <translation>Ошибка</translation>
     </message>
     <message>
-        <source>Dialog with name: %1 already exists</source>
-        <translation>Диалог с именем %1 уже существует</translation>
-    </message>
-    <message>
         <source>ui file must cointain QDialog instead QWidget or QMainWindow</source>
-        <translation>ui файл должен содержать QDialog вместо QWidget или QMainWindow</translation>
+        <translation>файл ui должен содержать QDialog вместо QWidget или QMainWindow</translation>
     </message>
     <message>
         <source>wrong file format</source>
-        <translation>неправильный формат файла</translation>
+        <translation>неверный формат файла</translation>
+    </message>
+    <message>
+        <source>Dialog with name: %1 already exists</source>
+        <translation>Диалог %1 уже существует</translation>
+    </message>
+</context>
+<context>
+    <name>LimeReport::ScriptEditor</name>
+    <message>
+        <source>Form</source>
+        <translation>Форма</translation>
+    </message>
+    <message>
+        <source>Data</source>
+        <translation>Данные</translation>
+    </message>
+    <message>
+        <source>Functions</source>
+        <translation>Функции</translation>
     </message>
 </context>
 <context>
     <name>LimeReport::ScriptEngineContext</name>
     <message>
         <source>Dialog with name: %1 can`t be created</source>
-        <translation>Диалог с именем: %1 не может быть создан</translation>
+        <translation>Диалог %1 не может быть создан</translation>
     </message>
     <message>
         <source>Error</source>
-        <translation type="vanished">Ошибка</translation>
+        <translation>Ошибка</translation>
     </message>
 </context>
 <context>
     <name>LimeReport::ScriptEngineManager</name>
     <message>
-        <source>FieldName</source>
-        <translation type="vanished">Имя поля</translation>
-    </message>
-    <message>
         <source>BandName</source>
-        <translation>Имя банда</translation>
+        <translation>Имя раздела</translation>
     </message>
     <message>
         <source>Value</source>
@@ -2215,7 +2408,7 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>Name</source>
-        <translation>Имя переменной</translation>
+        <translation>Имя</translation>
     </message>
     <message>
         <source>GROUP FUNCTIONS</source>
@@ -2238,8 +2431,48 @@ This preview is no longer valid.</source>
         <translation>ОБЩИЕ</translation>
     </message>
     <message>
-        <source>Seconds</source>
-        <translation type="unfinished"></translation>
+        <source>Function manager with name &quot;%1&quot; already exists!</source>
+        <translation>Менеджер функций с именем %1 уже существует!</translation>
+    </message>
+    <message>
+        <source>FieldName</source>
+        <translation>Имя поля</translation>
+    </message>
+    <message>
+        <source>Field %1 not found in %2!</source>
+        <translation>Поле %1 не найдено в %2!</translation>
+    </message>
+    <message>
+        <source>Datasource</source>
+        <translation>Источник данных</translation>
+    </message>
+    <message>
+        <source>ValueField</source>
+        <translation>Поле Значения</translation>
+    </message>
+    <message>
+        <source>KeyField</source>
+        <translation>Ключевое Поле</translation>
+    </message>
+    <message>
+        <source>KeyFieldValue</source>
+        <translation>Значение Ключевого Поля</translation>
+    </message>
+    <message>
+        <source>Unique identifier</source>
+        <translation>Уникальный идентификатор</translation>
+    </message>
+    <message>
+        <source>Content</source>
+        <translation>Содержимое</translation>
+    </message>
+    <message>
+        <source>Indent</source>
+        <translation>Отступ</translation>
+    </message>
+    <message>
+        <source>datasourceName</source>
+        <translation>Имя источника данных</translation>
     </message>
 </context>
 <context>
@@ -2274,7 +2507,15 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>Suppress absent fields and variables warning</source>
-        <translation>Не выводить сообщения об отсутствия полей или переменных</translation>
+        <translation>Не выводить сообщения об отсутствии полей или переменных</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation>Язык</translation>
+    </message>
+    <message>
+        <source>Use dark theme</source>
+        <translation>Использовать Темную тему</translation>
     </message>
 </context>
 <context>
@@ -2295,7 +2536,7 @@ This preview is no longer valid.</source>
     <name>LimeReport::TearOffBand</name>
     <message>
         <source>Tear-off Band</source>
-        <translation>Полоса для отрывания</translation>
+        <translation>Полоса отрыва</translation>
     </message>
 </context>
 <context>
@@ -2353,15 +2594,19 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>TextItem &quot; %1 &quot; already has folower &quot; %2 &quot; </source>
-        <translation>Текстовый элемент &quot;%1&quot; уже следует за &quot;%2&quot; </translation>
+        <translation>Текстовый элемент %1 уже следует за %2 </translation>
     </message>
     <message>
         <source>TextItem &quot; %1 &quot; not found!</source>
-        <translation>Текстовый элемент &quot;%1&quot; не найден!</translation>
+        <translation>Текстовый элемент %1 не найден!</translation>
     </message>
     <message>
         <source>Transparent</source>
-        <translation type="vanished">Прозрачный</translation>
+        <translation>Прозрачный</translation>
+    </message>
+    <message>
+        <source>Watermark</source>
+        <translation>Водный знак</translation>
     </message>
 </context>
 <context>
@@ -2373,10 +2618,6 @@ This preview is no longer valid.</source>
     <message>
         <source>Content</source>
         <translation>Содержимое</translation>
-    </message>
-    <message>
-        <source>Functions</source>
-        <translation>Функции</translation>
     </message>
     <message>
         <source>Editor settings</source>
@@ -2391,12 +2632,8 @@ This preview is no longer valid.</source>
         <translation>Отмена</translation>
     </message>
     <message>
-        <source>Data</source>
-        <translation>Данные</translation>
-    </message>
-    <message>
         <source>...</source>
-        <translation></translation>
+        <translation>...</translation>
     </message>
     <message>
         <source>Ok</source>
@@ -2409,6 +2646,53 @@ This preview is no longer valid.</source>
     <message>
         <source>Esc</source>
         <translation></translation>
+    </message>
+</context>
+<context>
+    <name>LimeReport::TranslationEditor</name>
+    <message>
+        <source>Form</source>
+        <translation>Форма</translation>
+    </message>
+    <message>
+        <source>Languages</source>
+        <translation>Языки</translation>
+    </message>
+    <message>
+        <source>...</source>
+        <translation>...</translation>
+    </message>
+    <message>
+        <source>Pages</source>
+        <translation>Страницы</translation>
+    </message>
+    <message>
+        <source>Strings</source>
+        <translation>Строки</translation>
+    </message>
+    <message>
+        <source>Source Text</source>
+        <translation>Исходный текст</translation>
+    </message>
+    <message>
+        <source>Translation</source>
+        <translation>Перевод</translation>
+    </message>
+    <message>
+        <source>Checked</source>
+        <translation>Проверенный</translation>
+    </message>
+    <message>
+        <source>Report Item</source>
+        <translation>Элемент Отчета</translation>
+    </message>
+    <message>
+        <source>Property</source>
+        <translation>Свойство</translation>
+    </message>
+    <message>
+        <source>Source text</source>
+        <translation>Исходный текст</translation>
     </message>
 </context>
 <context>
@@ -2482,7 +2766,7 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>Barcode Item</source>
-        <translation>Элемент штрих код</translation>
+        <translation>Штрих код</translation>
     </message>
     <message>
         <source>HLayout</source>
@@ -2518,7 +2802,7 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>datasouce &quot;%1&quot; not found!</source>
-        <translation>источник данных &quot;%1&quot; не найден!</translation>
+        <translation>источник данных  %1 не найден!</translation>
     </message>
     <message>
         <source>Attention!</source>
@@ -2527,10 +2811,6 @@ This preview is no longer valid.</source>
     <message>
         <source>Selected elements have different parent containers</source>
         <translation>Выделенные элементы имеют различные родительские контейнеры</translation>
-    </message>
-    <message>
-        <source>Object with name %1 already exists</source>
-        <translation type="vanished">Объект с именем %1 уже существует</translation>
     </message>
     <message>
         <source>Function %1 not found or have wrong arguments</source>
@@ -2569,16 +2849,12 @@ This preview is no longer valid.</source>
         <translation>содержимое</translation>
     </message>
     <message>
-        <source>Master datasource &quot;%1&quot; not found!!!</source>
-        <translation type="vanished">Главный источник данных &quot;%1&quot; не найден!</translation>
-    </message>
-    <message>
         <source>Master datasouce &quot;%1&quot; not found!</source>
-        <translation>Главный источник данных &quot;%1&quot; не найден!</translation>
+        <translation>Главный источник данных %1 не найден!</translation>
     </message>
     <message>
         <source>bool</source>
-        <translation></translation>
+        <translation>Логическое</translation>
     </message>
     <message>
         <source>QColor</source>
@@ -2594,11 +2870,11 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>int</source>
-        <translation></translation>
+        <translation>Целое</translation>
     </message>
     <message>
         <source>qreal</source>
-        <translation></translation>
+        <translation>Дробь</translation>
     </message>
     <message>
         <source>QRect</source>
@@ -2622,23 +2898,39 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>Tear-off Band</source>
-        <translation>Полоса для отрывания</translation>
+        <translation>Полоса отрыва</translation>
     </message>
     <message>
         <source>Wrong file format</source>
-        <translation>Неправильный формат файла</translation>
-    </message>
-    <message>
-        <source>Datasource manager not found</source>
-        <translation type="vanished">Менеджер источников данных не найден</translation>
+        <translation>Неверный формат файла</translation>
     </message>
     <message>
         <source>Master datasource &quot;%1&quot; not found!</source>
-        <translation>Главный источник данных &quot;%1&quot; не найден!</translation>
+        <translation>Главный источник данных %1 не найден!</translation>
     </message>
     <message>
         <source>Object with name %1 already exists!</source>
-        <translation>Объект с именем %1 уже существует!</translation>
+        <translation>Объект %1 уже существует!</translation>
+    </message>
+    <message>
+        <source>Chart Item</source>
+        <translation>Диаграмма</translation>
+    </message>
+    <message>
+        <source>First</source>
+        <translation>Первый</translation>
+    </message>
+    <message>
+        <source>Second</source>
+        <translation>Второй</translation>
+    </message>
+    <message>
+        <source>Thrid</source>
+        <translation>Третий</translation>
+    </message>
+    <message>
+        <source>Datasource manager not found</source>
+        <translation>Менеджер источников данных не найден</translation>
     </message>
 </context>
 </TS>

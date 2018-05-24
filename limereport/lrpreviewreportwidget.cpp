@@ -3,6 +3,7 @@
 
 #include <QPrinter>
 #include <QPrintDialog>
+#include <QPrinterInfo>
 #include <QScrollBar>
 #include <QFileDialog>
 
@@ -59,14 +60,15 @@ PageItemDesignIntf::Ptr PreviewReportWidgetPrivate::currentPage()
     else return PageItemDesignIntf::Ptr(0);
 }
 
-PreviewReportWidget::PreviewReportWidget(ReportEnginePrivate *report, QWidget *parent) :
+PreviewReportWidget::PreviewReportWidget(ReportEngine *report, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::PreviewReportWidget), d_ptr(new PreviewReportWidgetPrivate(this))
 {
     ui->setupUi(this);
-    d_ptr->m_previewPage = report->createPreviewPage();
+    d_ptr->m_report = report->d_ptr;
+    d_ptr->m_previewPage = d_ptr->m_report->createPreviewPage();
     d_ptr->m_previewPage->setItemMode( LimeReport::PreviewMode );
-    d_ptr->m_report = report;
+
 
     ui->errorsView->setVisible(false);
     connect(ui->graphicsView->verticalScrollBar(),SIGNAL(valueChanged(int)), this, SLOT(slotSliderMoved(int)));
@@ -157,7 +159,17 @@ void PreviewReportWidget::lastPage()
 
 void PreviewReportWidget::print()
 {
+
+    QPrinterInfo pi;
     QPrinter printer(QPrinter::HighResolution);
+
+    if (!pi.defaultPrinter().isNull())
+#ifdef HAVE_QT4
+            printer.setPrinterName(pi.defaultPrinter().printerName());
+#endif
+#ifdef HAVE_QT5
+            printer.setPrinterName(pi.defaultPrinterName());
+#endif
     QPrintDialog dialog(&printer,QApplication::activeWindow());
     if (dialog.exec()==QDialog::Accepted){
         if (!d_ptr->m_reportPages.isEmpty())
@@ -188,6 +200,7 @@ void PreviewReportWidget::printToPDF()
         foreach(PageItemDesignIntf::Ptr pageItem, d_ptr->m_reportPages){
             d_ptr->m_previewPage->reactivatePageItem(pageItem);
         }
+        d_ptr->m_report->emitPrintedToPDF(fileName);
     }
 }
 

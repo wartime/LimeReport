@@ -35,7 +35,6 @@
 #include <QIcon>
 #include <QImage>
 #include <QPainter>
-#include <QApplication>
 #include <QStyle>
 #include <QStylePainter>
 
@@ -123,6 +122,7 @@ void FlagsPropItem::translateFlagsItem()
     tr("BottomLine");
     tr("LeftLine");
     tr("RightLine");
+    tr("AllLines");
 }
 
 FlagPropItem::FlagPropItem(QObject* object, ObjectsList* objects, const QString &propName, const QString &displayName, const QVariant &value, ObjectPropItem* parent, bool readonly)

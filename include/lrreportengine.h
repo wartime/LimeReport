@@ -33,11 +33,13 @@
 #include <QObject>
 #include <QSettings>
 #include <QPrintDialog>
+//#include <QJSEngine>
 
 #include "lrglobal.h"
 #include "lrdatasourcemanagerintf.h"
 #include "lrscriptenginemanagerintf.h"
 #include "lrpreviewreportwidget.h"
+#include "lrreportdesignwindowintrerface.h"
 
 class QPrinter;
 
@@ -62,11 +64,16 @@ class DataSourceManager;
 class ReportEnginePrivate;
 class PageDesignIntf;
 class PageItemDesignIntf;
+class ReportDesignWidget;
+class PreviewReportWidget;
 
 typedef QList< QSharedPointer<PageItemDesignIntf> > ReportPages;
 
 class LIMEREPORT_EXPORT ReportEngine : public QObject{
     Q_OBJECT
+    friend class ReportDesignWidget;
+    friend class PreviewReportWidget;
+    friend class TranslationEditor;
 public:
     static void setSettings(QSettings *value){m_settings=value;}
 public:
@@ -79,6 +86,7 @@ public:
     bool    printToPDF(const QString& fileName);
     void    previewReport(PreviewHints hints = PreviewBarsUserSetting);
     void    designReport();
+    ReportDesignWindowInterface* getDesignerWindow();
     void    setShowProgressDialog(bool value);
     IDataSourceManager* dataManager();
     IScriptEngineManager* scriptManager();
@@ -87,7 +95,6 @@ public:
     bool    loadFromString(const QString& data);
     QString reportFileName();
     void    setReportFileName(const QString& fileName);
-    bool    saveToFile();
     bool    saveToFile(const QString& fileName);
     QByteArray  saveToByteArray();
     QString saveToString();
@@ -102,8 +109,12 @@ public:
     bool resultIsEditable();
     bool isBusy();
     void setPassPharse(QString& passPharse);
+    QList<QLocale::Language> aviableLanguages();
+    bool setReportLanguage(QLocale::Language language);
     Qt::LayoutDirection previewLayoutDirection();
     void setPreviewLayoutDirection(const Qt::LayoutDirection& previewLayoutDirection);
+    QList<QLocale::Language> designerLanguages();
+    QLocale::Language currentDesignerLanguage();
 signals:
     void renderStarted();
     void renderFinished();
@@ -111,6 +122,14 @@ signals:
     void onLoad(bool& loaded);
     void onSave();
     void saveFinished();
+
+    void loaded();
+    void printedToPDF(QString fileName);
+
+    void getAviableLanguages(QList<QLocale::Language>* languages);
+    void currentDefaulLanguageChanged(QLocale::Language);
+    QLocale::Language getCurrentDefaultLanguage();
+
 public slots:
     void cancelRender();
 protected:

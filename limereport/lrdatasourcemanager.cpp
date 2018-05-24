@@ -37,6 +37,13 @@
 #include <QFileInfo>
 #include <stdexcept>
 
+#ifdef BUILD_WITH_EASY_PROFILER
+#include "easy/profiler.h"
+#else
+# define EASY_BLOCK(...)
+# define EASY_END_BLOCK
+#endif
+
 namespace LimeReport{
 
 DataNode::~DataNode()
@@ -211,23 +218,24 @@ void DataSourceModel::updateModel()
     }
 
     vars = m_rootNode->addChild(tr("External variables"),DataNode::Variables,QIcon(":/report/images/folder"));
-    foreach (QString name, m_dataManager->namesOfUserVariables()){
+    foreach (QString name, m_dataManager->userVariableNames()){
         vars->addChild(name,DataNode::Variable,QIcon(":/report/images/value"));
     }
 }
 
 DataSourceManager::DataSourceManager(QObject *parent) :
-    QObject(parent), m_lastError(""), m_designTime(true), m_needUpdate(false), m_dbCredentialsProvider(0)
+    QObject(parent), m_lastError(""), m_designTime(false), m_needUpdate(false), m_dbCredentialsProvider(0)
 {
     m_groupFunctionFactory.registerFunctionCreator(QLatin1String("COUNT"),new ConstructorGroupFunctionCreator<CountGroupFunction>);
     m_groupFunctionFactory.registerFunctionCreator(QLatin1String("SUM"),new ConstructorGroupFunctionCreator<SumGroupFunction>);
     m_groupFunctionFactory.registerFunctionCreator(QLatin1String("AVG"),new ConstructorGroupFunctionCreator<AvgGroupFunction>);
     m_groupFunctionFactory.registerFunctionCreator(QLatin1String("MIN"),new ConstructorGroupFunctionCreator<MinGroupFunction>);
     m_groupFunctionFactory.registerFunctionCreator(QLatin1String("MAX"),new ConstructorGroupFunctionCreator<MaxGroupFunction>);
-    setSystemVariable(QLatin1String("#PAGE"),1,FirstPass);
+    setSystemVariable(QLatin1String("#PAGE"),1,SecondPass);
     setSystemVariable(QLatin1String("#PAGE_COUNT"),0,SecondPass);
     setSystemVariable(QLatin1String("#IS_LAST_PAGEFOOTER"),false,FirstPass);
     setSystemVariable(QLatin1String("#IS_FIRST_PAGEFOOTER"),false,FirstPass);
+    m_datasourcesModel.setDataSourceManager(this);
 
     connect(&m_reportVariables, SIGNAL(variableHasBeenAdded(QString)),
             this, SLOT(slotVariableHasBeenAdded(QString)) );
@@ -238,7 +246,7 @@ DataSourceManager::DataSourceManager(QObject *parent) :
     connect(&m_userVariables, SIGNAL(variableHasBeenChanged(QString)),
             this, SLOT(slotVariableHasBeenChanged(QString)));
 
-    m_datasourcesModel.setDataSourceManager(this);
+
 }
 
 QString DataSourceManager::defaultDatabasePath() const
@@ -399,6 +407,7 @@ QSharedPointer<QAbstractItemModel>DataSourceManager::previewSQL(const QString &c
 void DataSourceManager::updateDatasourceModel()
 {
     m_datasourcesModel.updateModel();
+    emit datasourcesChanged();
     m_needUpdate = false;
 }
 
@@ -1075,7 +1084,7 @@ int DataSourceManager::elementsCount(const QString &collectionName)
         return m_proxies.count();
     }
     if (collectionName=="variables"){
-        return m_reportVariables.userVariablesCount();
+        return m_reportVariables.variablesCount();
     }
     return 0;
 }
@@ -1095,18 +1104,18 @@ QObject* DataSourceManager::elementAt(const QString &collectionName, int index)
         return m_proxies.at(index);
     }
     if (collectionName=="variables"){
-        return m_reportVariables.userVariableAt(index);
+        return m_reportVariables.variableAt(index);
     }
     return 0;
 }
 
 void DataSourceManager::collectionLoadFinished(const QString &collectionName)
 {
-
+    EASY_BLOCK("DataSourceManager::collectionLoadFinished");
     if (collectionName.compare("connections",Qt::CaseInsensitive) == 0){
 
     }
-
+    EASY_BLOCK("queryes");
     if (collectionName.compare("queries",Qt::CaseInsensitive) == 0){
 
         QMutableListIterator<QueryDesc*> it(m_queries);
@@ -1123,7 +1132,8 @@ void DataSourceManager::collectionLoadFinished(const QString &collectionName)
         }
 
     }
-
+    EASY_END_BLOCK;
+    EASY_BLOCK("subqueries")
     if (collectionName.compare("subqueries",Qt::CaseInsensitive) == 0){
 
         QMutableListIterator<SubQueryDesc*> it(m_subqueries);
@@ -1145,7 +1155,8 @@ void DataSourceManager::collectionLoadFinished(const QString &collectionName)
         }
 
     }
-
+    EASY_END_BLOCK;
+    EASY_BLOCK("subproxies");
     if (collectionName.compare("subproxies",Qt::CaseInsensitive) == 0){
         QMutableListIterator<ProxyDesc*> it(m_proxies);
         while (it.hasNext()){
@@ -1158,19 +1169,29 @@ void DataSourceManager::collectionLoadFinished(const QString &collectionName)
             }
         }
     }
-
+    EASY_END_BLOCK;
+    EASY_BLOCK("variables");
     if (collectionName.compare("variables",Qt::CaseInsensitive) == 0){
         foreach (VarDesc* item, m_tempVars) {
             if (!m_reportVariables.containsVariable(item->name())){
                 m_reportVariables.addVariable(item->name(),item->value(),VarDesc::Report,FirstPass);
+                VarDesc* currentVar = m_reportVariables.variableByName(item->name());
+                currentVar->initFrom(item);
             }
             delete item;
         }
         m_tempVars.clear();
     }
-
-    emit datasourcesChanged();
+    EASY_END_BLOCK;
+    if (designTime()){
+        EASY_BLOCK("emit datasourcesChanged()");
+        emit datasourcesChanged();
+        EASY_END_BLOCK;
+    }
+    EASY_BLOCK("emit loadCollectionFinished(collectionName)");
     emit loadCollectionFinished(collectionName);
+    EASY_END_BLOCK;
+    EASY_END_BLOCK;
 }
 
 void DataSourceManager::addVariable(const QString &name, const QVariant &value, VarDesc::VarType type, RenderPass pass)
@@ -1180,8 +1201,11 @@ void DataSourceManager::addVariable(const QString &name, const QVariant &value, 
     } else {
         m_reportVariables.addVariable(name,value,type,pass);
     }
-    if (designTime())
-      emit datasourcesChanged();
+    if (designTime()){
+        EASY_BLOCK("DataSourceManager::addVariable emit ds changed");
+        emit datasourcesChanged();
+        EASY_END_BLOCK;
+    }
 }
 
 void DataSourceManager::deleteVariable(const QString& name)
@@ -1202,6 +1226,7 @@ void DataSourceManager::changeVariable(const QString& name,const QVariant& value
     if (m_reportVariables.containsVariable(name)){
         m_reportVariables.changeVariable(name,value);
     }
+
 }
 
 void DataSourceManager::setSystemVariable(const QString &name, const QVariant &value, RenderPass pass)
@@ -1417,6 +1442,24 @@ QVariant DataSourceManager::fieldData(const QString &fieldName)
     return QVariant();
 }
 
+QVariant DataSourceManager::fieldDataByKey(const QString& datasourceName, const QString& valueFieldName, const QString& keyFieldName, QVariant keyValue)
+{
+    IDataSource* ds = dataSource(datasourceName);
+    if (ds){
+        return ds->dataByKeyField(valueFieldName, keyFieldName, keyValue);
+    }
+    return QVariant();
+}
+
+void DataSourceManager::reopenDatasource(const QString& datasourceName)
+{
+    QueryHolder* qh = dynamic_cast<QueryHolder*>(dataSourceHolder(datasourceName));
+    if (qh){
+        qh->invalidate(designTime()?IDataSource::DESIGN_MODE:IDataSource::RENDER_MODE);
+        invalidateChildren(datasourceName);
+    }
+}
+
 QVariant DataSourceManager::variable(const QString &variableName)
 {
     if (m_userVariables.containsVariable(variableName))
@@ -1438,12 +1481,36 @@ bool DataSourceManager::variableIsSystem(const QString &name)
     return false;
 }
 
+bool DataSourceManager::variableIsMandatory(const QString& name)
+{
+    if (m_reportVariables.containsVariable(name))
+        return m_reportVariables.variableByName(name)->isMandatory();
+    return false;
+}
+
+void DataSourceManager::setVarableMandatory(const QString& name, bool value)
+{
+    if (m_reportVariables.containsVariable(name))
+        m_reportVariables.variableByName(name)->setMandatory(value);
+}
+
 QStringList DataSourceManager::variableNames()
 {
     return m_reportVariables.variableNames();
 }
 
-QStringList DataSourceManager::namesOfUserVariables(){
+QStringList DataSourceManager::variableNamesByRenderPass(RenderPass pass)
+{
+    QStringList result;
+    foreach(QString variableName, m_reportVariables.variableNames()){
+        if (m_reportVariables.variablePass(variableName) == pass){
+            result.append(variableName);
+        }
+    }
+    return result;
+}
+
+QStringList DataSourceManager::userVariableNames(){
     return m_userVariables.variableNames();
 }
 
@@ -1452,6 +1519,19 @@ VarDesc::VarType DataSourceManager::variableType(const QString &name)
     if (m_reportVariables.containsVariable(name))
         return m_reportVariables.variableType(name);
     return VarDesc::User;
+}
+
+VariableDataType DataSourceManager::variableDataType(const QString& name)
+{
+    if (m_reportVariables.containsVariable(name))
+        return m_reportVariables.variableByName(name)->dataType();
+    return Enums::Undefined;
+}
+
+void DataSourceManager::setVariableDataType(const QString& name, VariableDataType value)
+{
+    if (m_reportVariables.containsVariable(name))
+        m_reportVariables.variableByName(name)->setDataType(value);
 }
 
 void DataSourceManager::setAllDatasourcesToFirst()

@@ -111,6 +111,7 @@ BandDesignIntf::BandDesignIntf(BandsType bandType, const QString &xmlTypeName, Q
     m_dataSourceName(""),
     m_autoHeight(true),
     m_keepBottomSpace(false),
+    m_keepTopSpace(true),
     m_parentBand(0),
     m_parentBandName(""),
     m_bandMarker(0),
@@ -128,6 +129,7 @@ BandDesignIntf::BandDesignIntf(BandsType bandType, const QString &xmlTypeName, Q
     m_startFromNewPage(false),
     m_printAlways(false),
     m_repeatOnEachRow(false),
+    m_useAlternateBackgroundColor(false),
     m_bottomSpace()
 {
     setPossibleResizeDirectionFlags(ResizeBottom);
@@ -179,6 +181,13 @@ QString BandDesignIntf::translateBandName(const BaseDesignIntf* item) const{
         return tr(extractClassName(item->metaObject()->className()).toLatin1())+QString::number(extractItemIndex(item));
     } else {
         return item->objectName();
+    }
+}
+
+void BandDesignIntf::copyBookmarks(BandDesignIntf* sourceBand)
+{
+    foreach(QString key, sourceBand->bookmarks()){
+        addBookmark(key,sourceBand->getBookMark(key));
     }
 }
 
@@ -504,6 +513,10 @@ void BandDesignIntf::preparePopUpMenu(QMenu &menu)
     currAction->setCheckable(true);
     currAction->setChecked(keepBottomSpaceOption());
 
+    currAction = menu.addAction(tr("Keep top space"));
+    currAction->setCheckable(true);
+    currAction->setChecked(keepTopSpace());
+
     currAction = menu.addAction(tr("Start from new page"));
     currAction->setCheckable(true);
     currAction->setChecked(startFromNewPage());
@@ -524,12 +537,28 @@ void BandDesignIntf::processPopUpAction(QAction *action)
     if (action->text().compare(tr("Keep bottom space")) == 0){
         setProperty("keepBottomSpace",action->isChecked());
     }
+    if (action->text().compare(tr("Keep top space")) == 0){
+        setProperty("keepTopSpace",action->isChecked());
+    }
     if (action->text().compare(tr("Start new page")) == 0){
         setProperty("startNewPage",action->isChecked());
     }
     if (action->text().compare(tr("Start from new page")) == 0){
         setProperty("startFromNewPage",action->isChecked());
     }
+}
+
+void BandDesignIntf::recalcItems(DataSourceManager* dataManager)
+{
+    foreach(BaseDesignIntf* bi, childBaseItems()){
+        ContentItemDesignIntf* ci = dynamic_cast<ContentItemDesignIntf*>(bi);
+        if (bi){
+            ContentItemDesignIntf* pci = dynamic_cast<ContentItemDesignIntf*>(bi->patternItem());
+            ci->setContent(pci->content());
+        }
+    }
+
+    updateItemSize(dataManager,FirstPass,height());
 }
 
 BaseDesignIntf* BandDesignIntf::cloneUpperPart(int height, QObject *owner, QGraphicsItem *parent)
@@ -766,6 +795,21 @@ void BandDesignIntf::childBandDeleted(QObject *band)
     m_childBands.removeAt(m_childBands.indexOf(reinterpret_cast<BandDesignIntf*>(band)));
 }
 
+bool BandDesignIntf::useAlternateBackgroundColor() const
+{
+    return m_useAlternateBackgroundColor;
+}
+
+void BandDesignIntf::setUseAlternateBackgroundColor(bool useAlternateBackgroundColor)
+{
+    if (m_useAlternateBackgroundColor != useAlternateBackgroundColor){
+        QColor oldValue = m_useAlternateBackgroundColor;
+        m_useAlternateBackgroundColor=useAlternateBackgroundColor;
+        if (!isLoading())
+            notify("useAlternateBackgroundColor",oldValue,useAlternateBackgroundColor);
+    }
+}
+
 QColor BandDesignIntf::alternateBackgroundColor() const
 {
     if (metaObject()->indexOfProperty("alternateBackgroundColor")!=-1)
@@ -776,7 +820,12 @@ QColor BandDesignIntf::alternateBackgroundColor() const
 
 void BandDesignIntf::setAlternateBackgroundColor(const QColor &alternateBackgroundColor)
 {
-    m_alternateBackgroundColor = alternateBackgroundColor;
+    if (m_alternateBackgroundColor != alternateBackgroundColor){
+        QColor oldValue = m_alternateBackgroundColor;
+        m_alternateBackgroundColor=alternateBackgroundColor;
+        if (!isLoading())
+            notify("alternateBackgroundColor",oldValue,alternateBackgroundColor);
+    }
 }
 
 qreal BandDesignIntf::bottomSpace() const
@@ -784,11 +833,31 @@ qreal BandDesignIntf::bottomSpace() const
     return m_bottomSpace.isValid() ? m_bottomSpace.value() : height()-findMaxBottom();
 }
 
+QVariant BandDesignIntf::getBookMark(const QString& key){
+    if (m_bookmarks.contains(key))
+        return m_bookmarks.value(key);
+    else return QVariant();
+}
+
 void BandDesignIntf::slotPropertyObjectNameChanged(const QString &, const QString& newName)
 {
     update();
     if (m_bandNameLabel)
         m_bandNameLabel->updateLabel(newName);
+}
+
+bool BandDesignIntf::keepTopSpace() const
+{
+    return m_keepTopSpace;
+}
+
+void BandDesignIntf::setKeepTopSpace(bool value)
+{
+    if (m_keepTopSpace != value){
+        m_keepTopSpace = value;
+        if (!isLoading())
+            notify("keepTopSpace",!value,value);
+    }
 }
 
 bool BandDesignIntf::repeatOnEachRow() const
@@ -940,9 +1009,14 @@ void BandDesignIntf::updateItemSize(DataSourceManager* dataManager, RenderPass p
     }
     restoreLinks();
     snapshotItemsLayout();
-    arrangeSubItems(pass, dataManager);
+    arrangeSubItems(pass, dataManager); 
     if (autoHeight()){
-        //if keepBottomSpace()&& height()<findMaxBottom()
+        if (!keepTopSpace()) {
+            qreal minTop = findMinTop();
+            foreach (BaseDesignIntf* item, childBaseItems()) {
+                item->setY(item->y() - minTop);
+            }
+        }
         setHeight(findMaxBottom()+spaceBorder);
     }
     if ((maxHeight>0)&&(height()>maxHeight)){
@@ -950,6 +1024,17 @@ void BandDesignIntf::updateItemSize(DataSourceManager* dataManager, RenderPass p
         setHeight(maxHeight);
     }
     BaseDesignIntf::updateItemSize(dataManager, pass, maxHeight);
+}
+
+void BandDesignIntf::restoreItems()
+{
+    foreach(BaseDesignIntf* bi, childBaseItems()){
+        ContentItemDesignIntf* ci = dynamic_cast<ContentItemDesignIntf*>(bi);
+        if (ci){
+            ContentItemDesignIntf* pci = dynamic_cast<ContentItemDesignIntf*>(bi->patternItem());
+            ci->setContent(pci->content());
+        }
+    }
 }
 
 void BandDesignIntf::updateBandNameLabel()

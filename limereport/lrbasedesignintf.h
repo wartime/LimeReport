@@ -96,6 +96,7 @@ class  BaseDesignIntf :
     Q_PROPERTY(int borderLineSize READ borderLineSize WRITE setBorderLineSize)
     Q_PROPERTY(bool isVisible READ isVisible WRITE setItemVisible DESIGNABLE false)
     Q_PROPERTY(QColor borderColor READ borderColor WRITE setBorderColor)
+
     friend class ReportRender;
 public:
     enum BGMode { TransparentMode, OpaqueMode};
@@ -237,6 +238,7 @@ public:
     virtual void beforeDelete();
 
     QList<BaseDesignIntf*> childBaseItems();
+    QList<BaseDesignIntf*> allChildBaseItems();
     BaseDesignIntf* childByName(const QString& name);
 
     virtual QWidget *defaultEditor();
@@ -272,6 +274,11 @@ public:
     void setZValueProperty(qreal value);
     QString patternName() const;
     void setPatternName(const QString &patternName);
+    BaseDesignIntf* patternItem() const;
+    void setPatternItem(BaseDesignIntf* patternItem);
+    virtual QMap<QString, QString> getStringForTranslation();
+    bool fillInSecondPass() const;
+    void setFillInSecondPass(bool fillInSecondPass);
     bool isWatermark() const;
     virtual void setWatermark(bool watermark);
 
@@ -343,6 +350,9 @@ protected:
 
     virtual void preparePopUpMenu(QMenu& menu){Q_UNUSED(menu)}
     virtual void processPopUpAction(QAction* action){Q_UNUSED(action)}
+
+    void addChildItems(QList<BaseDesignIntf*>* list);
+
 private:
     void updateSelectionMarker();
     int resizeDirectionFlags(QPointF position);
@@ -398,7 +408,10 @@ private:
     QColor  m_borderColor;
     ReportSettings* m_reportSettings;
     QString m_patternName;
+    BaseDesignIntf* m_patternItem;
+    bool    m_fillInSecondPass;
     bool m_watermark;
+    
 signals:
     void geometryChanged(QObject* object, QRectF newGeometry, QRectF oldGeometry);
     void posChanged(QObject* object, QPointF newPos, QPointF oldPos);

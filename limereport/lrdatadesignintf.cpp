@@ -282,6 +282,16 @@ QVariant ModelToDataSource::data(const QString &columnName)
     return m_model->data(m_model->index(currentRow(),columnIndexByName(columnName)));
 }
 
+QVariant ModelToDataSource::dataByKeyField(const QString& columnName, const QString& keyColumnName, QVariant keyData)
+{
+   for( int i=0; i < m_model->rowCount(); ++i ){
+      if (m_model->data(m_model->index(i, columnIndexByName(keyColumnName))) == keyData){
+          return m_model->data(m_model->index(i, columnIndexByName(columnName)));
+      }
+   }
+   return QVariant();
+}
+
 int ModelToDataSource::columnCount()
 {
     if (isInvalid()) return 0;
@@ -497,7 +507,7 @@ QObject *ProxyDesc::elementAt(const QString &collectionName, int index)
 
 ProxyHolder::ProxyHolder(ProxyDesc* desc, DataSourceManager* dataManager)
     :m_model(0), m_desc(desc), m_lastError(""), m_mode(IDataSource::RENDER_MODE),
-     m_invalid(false), m_dataManger(dataManager)
+     m_invalid(false), m_dataManager(dataManager)
 {}
 
 QString ProxyHolder::masterDatasource()
@@ -689,6 +699,7 @@ bool CallbackDatasource::prior(){
 
 void CallbackDatasource::first(){
     m_currentRow = 0;
+    m_getDataFromCache = false;
     m_eof=checkIfEmpty();
     bool result=false;
 
@@ -703,20 +714,52 @@ void CallbackDatasource::first(){
     else m_eof = !result;
 }
 
+QVariant CallbackDatasource::callbackData(const QString& columnName, int row)
+{
+    CallbackInfo info;
+    QVariant result;
+    info.dataType = CallbackInfo::ColumnData;
+    info.columnName = columnName;
+    info.index = row;
+    emit getCallbackData(info, result);
+    return result;
+}
+
 QVariant CallbackDatasource::data(const QString& columnName)
 {
     QVariant result;
     if (!bof())
     {
         if (!m_getDataFromCache){
-            CallbackInfo info;
-            info.dataType = CallbackInfo::ColumnData;
-            info.columnName = columnName;
-            info.index = m_currentRow;
-            emit getCallbackData(info,result);
+            result = callbackData(columnName, m_currentRow);
         } else {
             result = m_valuesCache[columnName];
         }
+    }
+    return result;
+}
+
+QVariant CallbackDatasource::dataByKeyField(const QString& columnName, const QString& keyColumnName, QVariant keyData)
+{
+    int backupCurrentRow = m_currentRow;
+    int currentRow = 0;
+    QVariant result = QVariant();
+    first();
+    if (!checkIfEmpty()){
+        do {
+            QVariant key = callbackData(keyColumnName, currentRow);
+            if (key == keyData){
+                result = callbackData(columnName, currentRow);
+                break;
+            }
+            currentRow++;
+        } while (next());
+    }
+
+    first();
+    if (backupCurrentRow != -1){
+        for (int i = 0; i < backupCurrentRow; ++i)
+            next();
     }
     return result;
 }
@@ -782,7 +825,7 @@ int CallbackDatasource::columnIndexByName(QString name)
 bool CallbackDatasource::checkNextRecord(int recordNum){
     if (bof()) checkIfEmpty();
     if (m_rowCount > 0) {
-        return (m_currentRow < (m_rowCount-1));
+        return (recordNum < (m_rowCount-1));
     } else {
         QVariant result = false;
         CallbackInfo info;

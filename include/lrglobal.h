@@ -42,6 +42,13 @@
 #  define LIMEREPORT_EXPORT   /**/
 #endif
 
+#ifdef USE_QJSENGINE
+//#include <QJSEngine>
+#include <QQmlEngine>
+#else
+#include <QScriptEngine>
+#endif
+
 namespace LimeReport {
 
 #ifdef __GNUC__
@@ -77,31 +84,27 @@ namespace Const{
     const QString FIELD_RX = "\\$D\\s*\\{\\s*([^{}]*)\\s*\\}";
     const QString VARIABLE_RX = "\\$V\\s*\\{\\s*([^{}]*)\\s*\\}";
     const QString NAMED_VARIABLE_RX = "\\$V\\s*\\{\\s*(%1)\\s*\\}";
-    const QString SCRIPT_RX = "\\$S\\s*\\{(.*)\\}";
-
-    //const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*(((?:\\\"?\\$D\\s*\\{\\s*)|(?:\\\"?\\$V\\s*\\{\\s*)|(?:\\\"))(\\w+\\.?\\w+)((?:\\\")|(?:\\s*\\}\\\"?\\s*)))\\s*,\\s*\\\"(\\w+)\\\"\\s*\\)";
-    //const int DATASOURCE_INDEX = 6;
-    //const int VALUE_INDEX = 2;
-
-    //const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*(?:(?:((?:(?:\\\"?\\$D\\s*\\{\\s*)|(?:\\\"?\\$V\\s*\\{\\s*)|(?:\\\"?\\$S\\s*\\{\\s*)|(?:\\\"))((?:\\w+\\.?\\w+)|(?:\\w+))(?:(?:\\\")|(?:\\s*\\}\\\"?\\s*)))\\s*,)|(?:))\\s*\\\"(\\w+)\\\"\\s*\\)";
-    //const QString GROUP_FUNCTION_PARAM_RX = "\\((?:(.+),(.+))|(?:\\\"(\\w+)\\\")\\)";
-    //const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*(?:(?:(?:(?:\\\")|(?:))(\\w+)(?:(?:\\\")|(?:)))|(?:(?:(?:\\\")|(?:))(\\s*\\$\\w\\s*\\{.+\\}\\s*)(?:(?:\\\")|(?:))\\s*,\\s*(?:(?:\\\")|(?:))(\\w+)(?:(?:\\\")|(?:))))\\)";
-    const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*((?:(?:\\\")|(?:))(?:(?:\\$(?:(?:D\\{\\s*\\w*.\\w*\\s*\\})|(?:V\\{\\s*\\w*\\s*\\})|(?:S\\{.+\\})))|(?:\\w*))(?:(?:\\\")|(?:)))(?:(?:\\s*,\\s*(?:\\\"(\\w*)\\\"))|(?:))\\)";
-    const int DATASOURCE_INDEX = 3;//4;
-    const int VALUE_INDEX = 2; //2;
-    const int EXPRESSION_ARGUMENT_INDEX = 1;//3;
+    const QString SCRIPT_RX = "\\$S\\s*\\{(.*)\\}";    
+    const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*((?:(?:\\\")|(?:))(?:(?:\\$(?:(?:D\\{\\s*\\w*.\\w*\\s*\\})|(?:V\\{\\s*\\w*\\s*\\})|(?:S\\{.+\\})))|(?:\\w*))(?:(?:\\\")|(?:)))(?:(?:\\s*,\\s*(?:\\\"(\\w*)\\\"))|(?:))(?:(?:\\s*,\\s*(?:(\\w*)))|(?:))\\)";
+    const int DATASOURCE_INDEX = 3;
+    const int VALUE_INDEX = 2;
+    const int EXPRESSION_ARGUMENT_INDEX = 1;
 
     const QString GROUP_FUNCTION_RX = "(%1\\s*"+GROUP_FUNCTION_PARAM_RX+")";
     const QString GROUP_FUNCTION_NAME_RX = "%1\\s*\\((.*[^\\)])\\)";
     const int SCENE_MARGIN = 50;
+    const QString FUNCTION_MANAGER_NAME = "LimeReport";
+    const QString EOW("~!@#$%^&*()+{}|:\"<>?,/;'[]\\-=");
+
 }
     QString extractClassName(QString className);
     QString escapeSimbols(const QString& value);
     QString replaceHTMLSymbols(const QString &value);
     QVector<QString> normalizeCaptures(const QRegExp &reg);
+    bool isColorDark(QColor color);
 
     enum ExpandType {EscapeSymbols, NoEscapeSymbols, ReplaceHTMLSymbols};
-    enum RenderPass {FirstPass, SecondPass};
+    enum RenderPass {FirstPass = 1, SecondPass = 2};
     enum ArrangeType {AsNeeded, Force};
     enum PreviewHint{ShowAllPreviewBars = 0,
                      HidePreviewToolBar = 1,
@@ -134,6 +137,34 @@ namespace Const{
     typedef QStyleOptionViewItem StyleOptionViewItem;
 #endif
 
+#ifdef USE_QJSENGINE
+    typedef QJSEngine ScriptEngineType;
+    typedef QJSValue ScriptValueType;
+    template <typename T>
+    static inline QJSValue getJSValue(QJSEngine &e, T *p)
+    {
+        QJSValue res = e.newQObject(p);
+        return res;
+    }
+#else
+    typedef QScriptEngine ScriptEngineType;
+    typedef QScriptValue ScriptValueType;
+#endif
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
+    Q_NAMESPACE
+#endif
+    class Enums
+    {
+    public:
+        enum VariableDataType {Undefined, String, Bool, Int, Real, Date, Time, DateTime};
+        Q_ENUMS(VariableDataType)
+    private:
+        Enums(){}
+        Q_GADGET
+    };
+
+    typedef Enums::VariableDataType VariableDataType;
 
 } // namespace LimeReport
 
