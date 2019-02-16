@@ -173,6 +173,7 @@ public:
     bool isConnectedToBand(BandDesignIntf::BandsType bandType) const;
 
     int minChildIndex(BandsType bandType);
+    int minChildIndex(QSet<BandsType> ignoredBands = QSet<BandDesignIntf::BandsType>());
     int maxChildIndex(BandDesignIntf::BandsType bandType) const;
     int maxChildIndex(QSet<BandsType> ignoredBands = QSet<BandDesignIntf::BandsType>()) const;
 
@@ -234,7 +235,7 @@ public:
 
     bool startFromNewPage() const;
     void setStartFromNewPage(bool startFromNewPage);
-    bool canContainChildren(){ return true;}
+    bool canContainChildren() const{ return true;}
     bool printAlways() const;
     void setPrintAlways(bool printAlways);
     bool repeatOnEachRow() const;
@@ -247,14 +248,11 @@ public:
     qreal bottomSpace() const;
     void setBackgroundModeProperty(BGMode value);
     void setBackgroundOpacity(int value);
-
-    void addBookmark(const QString& key, const QVariant& value){ m_bookmarks.insert(key, value);}
-    QList<QString> bookmarks(){ return m_bookmarks.keys();}
-    QVariant getBookMark(const QString& key);
-    void copyBookmarks(BandDesignIntf* sourceBand);
-
+    int bootomSpace() const;
+    void setBootomSpace(int bootomSpace);
 signals:
     void bandRendered(BandDesignIntf* band);
+    void preparedForRender();
     void bandRegistred();
 protected:
     void  trimToMaxHeight(int maxHeight);
@@ -312,7 +310,7 @@ private:
     QMap<QString,BaseDesignIntf*> m_slicedItems;
     QColor 						m_alternateBackgroundColor;
     bool                        m_useAlternateBackgroundColor;
-    InitializedValue 			m_bottomSpace;
+    int 						m_bottomSpace;
     QMap<QString,QVariant>      m_bookmarks;
 };
 

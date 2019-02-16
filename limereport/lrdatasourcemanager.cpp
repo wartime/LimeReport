@@ -224,7 +224,8 @@ void DataSourceModel::updateModel()
 }
 
 DataSourceManager::DataSourceManager(QObject *parent) :
-    QObject(parent), m_lastError(""), m_designTime(false), m_needUpdate(false), m_dbCredentialsProvider(0)
+    QObject(parent), m_lastError(""), m_designTime(false), m_needUpdate(false),
+    m_dbCredentialsProvider(0), m_hasChanges(false)
 {
     m_groupFunctionFactory.registerFunctionCreator(QLatin1String("COUNT"),new ConstructorGroupFunctionCreator<CountGroupFunction>);
     m_groupFunctionFactory.registerFunctionCreator(QLatin1String("SUM"),new ConstructorGroupFunctionCreator<SumGroupFunction>);
@@ -238,11 +239,11 @@ DataSourceManager::DataSourceManager(QObject *parent) :
     m_datasourcesModel.setDataSourceManager(this);
 
     connect(&m_reportVariables, SIGNAL(variableHasBeenAdded(QString)),
-            this, SLOT(slotVariableHasBeenAdded(QString)) );
+            this, SLOT(slotVariableHasBeenAdded(QString)));
     connect(&m_reportVariables, SIGNAL(variableHasBeenChanged(QString)),
             this, SLOT(slotVariableHasBeenChanged(QString)));
     connect(&m_userVariables, SIGNAL(variableHasBeenAdded(QString)),
-            this, SLOT(slotVariableHasBeenAdded(QString)) );
+            this, SLOT(slotVariableHasBeenAdded(QString)));
     connect(&m_userVariables, SIGNAL(variableHasBeenChanged(QString)),
             this, SLOT(slotVariableHasBeenChanged(QString)));
 
@@ -307,7 +308,7 @@ void DataSourceManager::connectAllDatabases()
     foreach(ConnectionDesc* conn,m_connections){
         try{
             connectConnection(conn);
-        } catch (ReportError e){
+        } catch (ReportError &e){
             putError(e.what());
             setLastError(e.what());
             qDebug()<<e.what();
@@ -323,7 +324,7 @@ bool DataSourceManager::addModel(const QString &name, QAbstractItemModel *model,
     try{
         putHolder(name, mh);
         connect(mh, SIGNAL(modelStateChanged()), this, SIGNAL(datasourcesChanged()));
-    } catch (ReportError e){
+    } catch (ReportError &e){
         putError(e.what());
         setLastError(e.what());
         return false;
@@ -450,17 +451,32 @@ QString DataSourceManager::replaceVariables(QString query, QMap<QString,QString>
             QString var=rx.cap(0);
             var.remove("$V{");
             var.remove("}");
-
-            if (aliasesToParam.contains(var)){
-                curentAliasIndex++;
-                aliasesToParam.insert(var+"_v_alias"+QString::number(curentAliasIndex),var);
-                var += "_v_alias"+QString::number(curentAliasIndex);
+            if (!rx.cap(1).isEmpty()){
+                if (aliasesToParam.contains(var)){
+                    curentAliasIndex++;
+                    aliasesToParam.insert(var+"_v_alias"+QString::number(curentAliasIndex),var);
+                    var += "_v_alias"+QString::number(curentAliasIndex);
+                } else {
+                    aliasesToParam.insert(var,var);
+                }
+                query.replace(pos,rx.cap(0).length(),":"+var);
             } else {
-                aliasesToParam.insert(var,var);
+                QString varName = rx.cap(2).trimmed();
+                QString varParam = rx.cap(3).trimmed();
+                if (!varName.isEmpty()){
+                    if (!varParam.isEmpty() && varParam.compare("nobind") == 0 ){
+                        query.replace(pos,rx.cap(0).length(), variable(varName).toString());
+                    } else {
+                        query.replace(pos,rx.cap(0).length(),
+                                      QString(tr("Unknown parameter \"%1\" for variable \"%2\" found!")
+                                              .arg(varName)
+                                              .arg(varParam))
+                                      );
+                    }
+                } else {
+                    query.replace(pos,rx.cap(0).length(),QString(tr("Variable \"%1\" not found!").arg(var)));
+                }
             }
-
-            query.replace(pos,rx.cap(0).length(),":"+var);
-
         }
     }
     return query;
@@ -508,6 +524,7 @@ void DataSourceManager::addQuery(const QString &name, const QString &sqlText, co
     QueryDesc *queryDecs = new QueryDesc(name,sqlText,connectionName);
     putQueryDesc(queryDecs);
     putHolder(name,new QueryHolder(sqlText, connectionName, this));
+    m_hasChanges = true;
     emit datasourcesChanged();
 }
 
@@ -516,6 +533,7 @@ void DataSourceManager::addSubQuery(const QString &name, const QString &sqlText,
     SubQueryDesc *subQueryDesc = new SubQueryDesc(name.toLower(),sqlText,connectionName,masterDatasource);
     putSubQueryDesc(subQueryDesc);
     putHolder(name,new SubQueryHolder(sqlText, connectionName, masterDatasource, this));
+    m_hasChanges = true;
     emit datasourcesChanged();
 }
 
@@ -530,6 +548,7 @@ void DataSourceManager::addProxy(const QString &name, QString master, QString de
     }
     putProxyDesc(proxyDesc);
     putHolder(name,new ProxyHolder(proxyDesc, this));
+    m_hasChanges = true;
     emit datasourcesChanged();
 }
 
@@ -652,6 +671,7 @@ void DataSourceManager::removeDatasource(const QString &name)
         delete m_proxies.at(proxyIndex);
         m_proxies.removeAt(proxyIndex);
     }
+    m_hasChanges = true;
     emit datasourcesChanged();
 }
 
@@ -672,6 +692,7 @@ void DataSourceManager::removeConnection(const QString &connectionName)
             cit++;
         }
     }
+    m_hasChanges = true;
     emit datasourcesChanged();
 }
 
@@ -680,6 +701,7 @@ void DataSourceManager::addConnectionDesc(ConnectionDesc * connection)
     if (!isConnection(connection->name())) {
         connect(connection,SIGNAL(nameChanged(QString,QString)),this,SLOT(slotConnectionRenamed(QString,QString)));
         m_connections.append(connection);
+        m_hasChanges = true;
         if (connection->autoconnect()){
             try{
               connectConnection(connection);
@@ -871,7 +893,7 @@ void DataSourceManager::connectAutoConnections()
         if (conn->autoconnect()) {
             try {
                 connectConnection(conn);
-            } catch(ReportError e){
+            } catch(ReportError &e){
                 setLastError(e.what());
                 putError(e.what());
                 qDebug()<<e.what();
@@ -1034,6 +1056,7 @@ QStringList DataSourceManager::fieldNames(const QString &datasourceName)
 void DataSourceManager::addConnection(const QString &connectionName)
 {
     addConnectionDesc(new ConnectionDesc(QSqlDatabase::database(connectionName)));
+    m_hasChanges = true;
     emit datasourcesChanged();
 }
 
@@ -1213,8 +1236,10 @@ void DataSourceManager::deleteVariable(const QString& name)
     m_userVariables.deleteVariable(name);
     if (m_reportVariables.containsVariable(name)&&m_reportVariables.variableType(name)==VarDesc::Report){
         m_reportVariables.deleteVariable(name);
-        if (designTime())
-          emit datasourcesChanged();
+        if (designTime()){
+            m_hasChanges = true;
+            emit datasourcesChanged();
+        }
     }
 }
 
@@ -1291,14 +1316,16 @@ void DataSourceManager::invalidateQueriesContainsVariable(const QString& variabl
 
 void DataSourceManager::slotVariableHasBeenAdded(const QString& variableName)
 {
-    //qDebug()<< "variable has been added"<< variableName;
     invalidateQueriesContainsVariable(variableName);
+    if (variableType(variableName) == VarDesc::Report)
+        m_hasChanges = true;
 }
 
 void DataSourceManager::slotVariableHasBeenChanged(const QString& variableName)
 {
-    //qDebug()<< "variable has been changed"<< variableName;
     invalidateQueriesContainsVariable(variableName);
+    if (variableType(variableName) == VarDesc::Report)
+        m_hasChanges = true;
 }
 
 void DataSourceManager::clear(ClearMethod method)

@@ -151,6 +151,12 @@ void QObjectPropertyModel::translatePropertyName()
     tr("keepTopSpace");
     tr("printable");
     tr("variable");
+    tr("replaceCRwithBR");
+    tr("hideIfEmpty");
+    tr("hideEmptyItems");
+	tr("useExternalPainter");
+    tr("layoutSpacing");
+    tr("printerName");
 }
 
 void QObjectPropertyModel::clearObjectsList()

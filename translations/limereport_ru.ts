@@ -147,19 +147,7 @@ p, li { white-space: pre-wrap; }
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.&lt;/span&gt;&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:10pt; font-weight:600; color:#000000;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright 2015 Arin Alexander. All rights reserved.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished">&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
-p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Sans Serif&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;img src=&quot;:/report/images/logo_100.png&quot; height=&quot;100&quot; style=&quot;float: left;&quot; /&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Генератор отчетов для &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:600; color:#7faa18;&quot;&gt;Qt&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt; framework&lt;/span&gt;&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;LimeReport - кросс-платформенная С++ библиотека, написанная с использованием Qt framework и предназначенная для разработчиков программного обеспечения, которые хотят добавить в свое Qt приложение возможность формирования отчетов или печатных форм, генерируемых на основании шаблона.&lt;/span&gt;&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:11pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:11pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Официальный веб-сайт : &lt;/span&gt;&lt;a href=&quot;www.limereport.ru&quot;&gt;&lt;span style=&quot; font-size:11pt; text-decoration: underline; color:#0000ff;&quot;&gt;www.limereport.ru&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:11pt; text-decoration: underline; color:#0000ff;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:600;&quot;&gt;Эта библиотека распространяется в надежде, что она будет полезна, но БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ; даже без подразумеваемой гарантии КОММЕРЧЕСКОЙ ЦЕННОСТИ или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННОЙ ЦЕЛИ.&lt;/span&gt;&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:10pt; font-weight:600; color:#000000;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p align=&quot;justify&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Copyright 2015 Arin Alexander. Все права защищены.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <translation></translation>
     </message>
     <message>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -393,16 +381,16 @@ p, li { white-space: pre-wrap; }
         <translation>Сохранять отступ снизу</translation>
     </message>
     <message>
-        <source>Start from new page</source>
-        <translation>Начинать с новой страницы</translation>
+        <source>Print if empty</source>
+        <translation>Печатать, если пустое</translation>
     </message>
     <message>
-        <source>Start new page</source>
-        <translation>Начинать новую страницу</translation>
+        <source>Cut</source>
+        <translation>Вырезать</translation>
     </message>
     <message>
-        <source>Keep top space</source>
-        <translation>Сохранять отступ сверху</translation>
+        <source>Copy</source>
+        <translation>Копировать</translation>
     </message>
 </context>
 <context>
@@ -439,6 +427,10 @@ p, li { white-space: pre-wrap; }
         <source>Create Horizontal Layout</source>
         <translation>Создать Горизонтальную Компановку</translation>
     </message>
+    <message>
+        <source>Create Vertical Layout</source>
+        <translation>Создать Вертикальную Компановку</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::ConnectionDesc</name>
@@ -459,7 +451,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Connection Name</source>
-        <translation>Название</translation>
+        <translation>Наименование Соединения</translation>
     </message>
     <message>
         <source>Driver</source>
@@ -503,7 +495,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Connection Name is empty</source>
-        <translation>Наименование соединения не указано</translation>
+        <translation>Наименование Соединения не указано</translation>
     </message>
     <message>
         <source>Connection with name </source>
@@ -544,6 +536,26 @@ p, li { white-space: pre-wrap; }
         <source>Use alternate background color</source>
         <translation>Использовать альтернативный цвет фона</translation>
     </message>
+    <message>
+        <source>Keep subdetail together</source>
+        <translation>Привязать подчиненные данные</translation>
+    </message>
+    <message>
+        <source>Keep footer together</source>
+        <translation>Привязать завершение данных</translation>
+    </message>
+    <message>
+        <source>Start from new page</source>
+        <translation>Начинать с новой страницы</translation>
+    </message>
+    <message>
+        <source>Start new page</source>
+        <translation>Начинать новую страницу</translation>
+    </message>
+    <message>
+        <source>Slice last row</source>
+        <translation>Разрезать последнюю запись</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::DataBrowser</name>
@@ -557,7 +569,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add new datasource</source>
-        <translation>Добавить новый источник данных</translation>
+        <translation>Добавить источник данных</translation>
     </message>
     <message>
         <source>View data</source>
@@ -581,7 +593,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add new variable</source>
-        <translation>Добавить новую переменную</translation>
+        <translation>Добавить переменную</translation>
     </message>
     <message>
         <source>Edit variable</source>
@@ -638,12 +650,28 @@ p, li { white-space: pre-wrap; }
         <source>DataFooter</source>
         <translation>Завершение данных</translation>
     </message>
+    <message>
+        <source>Print always</source>
+        <translation>Печатать всегда</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::DataHeaderBand</name>
     <message>
         <source>DataHeader</source>
         <translation>Заголовок данных</translation>
+    </message>
+    <message>
+        <source>Reprint on each page</source>
+        <translation>Печатать на каждой странице</translation>
+    </message>
+    <message>
+        <source>Repeat on each row</source>
+        <translation>Повторять на каждой строке</translation>
+    </message>
+    <message>
+        <source>Print always</source>
+        <translation>Печатать всегда</translation>
     </message>
 </context>
 <context>
@@ -675,6 +703,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Datasource with name &quot;%1&quot; already exists!</source>
         <translation>Источник данных &quot;%1&quot; уже существует!</translation>
+    </message>
+    <message>
+        <source>Unknown parameter &quot;%1&quot; for variable &quot;%2&quot; found!</source>
+        <translation>Обнаружен неизвестный параметр &quot;%1&quot; для переменной &quot;%2&quot;!</translation>
     </message>
 </context>
 <context>
@@ -736,6 +768,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Landscape</source>
         <translation>Альбомная</translation>
+    </message>
+    <message>
+        <source>Layout</source>
+        <translation>Компоновка</translation>
+    </message>
+    <message>
+        <source>Table</source>
+        <translation>Таблица</translation>
     </message>
     <message>
         <source>NoneAutoWidth</source>
@@ -953,6 +993,10 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>LimeReport::FlagsPropItem</name>
     <message>
+        <source>AllLines</source>
+        <translation>Все границы</translation>
+    </message>
+    <message>
         <source>NoLine</source>
         <translation>Нет границ</translation>
     </message>
@@ -971,10 +1015,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>RightLine</source>
         <translation>Правая граница</translation>
-    </message>
-    <message>
-        <source>AllLines</source>
-        <translation>Внешние границы</translation>
     </message>
 </context>
 <context>
@@ -1059,6 +1099,10 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>LimeReport::ImageItem</name>
     <message>
+        <source>Ext.</source>
+        <translation>Внешний</translation>
+    </message>
+    <message>
         <source>Image</source>
         <translation>Изображение</translation>
     </message>
@@ -1141,7 +1185,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No borders</source>
-        <translation>Удалить границы</translation>
+        <translation>Нет границ</translation>
     </message>
     <message>
         <source>All borders</source>
@@ -1152,11 +1196,11 @@ p, li { white-space: pre-wrap; }
     <name>LimeReport::MasterDetailProxyModel</name>
     <message>
         <source>Field: &quot;%1&quot; not found in &quot;%2&quot; child datasource</source>
-        <translation>Поле: &quot;%1&quot; не найдено в подчиненном источнике данных &quot;%2&quot;</translation>
+        <translation>Поле &quot;%1&quot; не найдено в подчиненном источнике данных &quot;%2&quot;</translation>
     </message>
     <message>
         <source>Field: &quot;%1&quot; not found in &quot;%2&quot; master datasource</source>
-        <translation>Поле: &quot;%1&quot; не найдено в главном источнике данных &quot;%2&quot;</translation>
+        <translation>Поле &quot;%1&quot; не найдено в главном источнике данных &quot;%2&quot;</translation>
     </message>
 </context>
 <context>
@@ -1171,6 +1215,13 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Objects</source>
         <translation>Объекты</translation>
+    </message>
+</context>
+<context>
+    <name>LimeReport::PDFExporter</name>
+    <message>
+        <source>Export to PDF</source>
+        <translation>Экспортировать в PDF</translation>
     </message>
 </context>
 <context>
@@ -1225,12 +1276,12 @@ p, li { white-space: pre-wrap; }
         <translation>Форма</translation>
     </message>
     <message>
-        <source>PDF file name</source>
-        <translation>Имя PDF файла</translation>
-    </message>
-    <message>
         <source>Report file name</source>
         <translation>Имя файла отчета</translation>
+    </message>
+    <message>
+        <source>%1 file name</source>
+        <translation>%1 имя файла</translation>
     </message>
 </context>
 <context>
@@ -1305,11 +1356,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Preview</source>
-        <translation>Предосмотр</translation>
+        <translation>Предпросмотр</translation>
     </message>
     <message>
         <source>Ctrl+P</source>
-        <translation></translation>
+        <translation>Ctrl+P</translation>
     </message>
     <message>
         <source>Fit page width</source>
@@ -1646,6 +1697,10 @@ p, li { white-space: pre-wrap; }
         <translation>Цвет кисти</translation>
     </message>
     <message>
+        <source>replaceCRwithBR</source>
+        <translation>Заменять CR на BR</translation>
+    </message>
+    <message>
         <source>allowHTML</source>
         <translation>Разрешить HTML</translation>
     </message>
@@ -1743,7 +1798,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>repeatOnEachRow</source>
-        <translation>Печатать на каждой странице</translation>
+        <translation>Повторять на каждой строке</translation>
     </message>
     <message>
         <source>Property value</source>
@@ -1803,7 +1858,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>watermark</source>
-        <translation>водяной знак</translation>
+        <translation>Водяной знак</translation>
     </message>
     <message>
         <source>keepTopSpace</source>
@@ -1814,8 +1869,24 @@ p, li { white-space: pre-wrap; }
         <translation>Печатать</translation>
     </message>
     <message>
+        <source>hideIfEmpty</source>
+        <translation>Скрывать, если пустое</translation>
+    </message>
+    <message>
         <source>variable</source>
         <translation>Переменная</translation>
+    </message>
+    <message>
+        <source>hideEmptyItems</source>
+        <translation>Скрывать пустые элементы</translation>
+    </message>
+    <message>
+        <source>useExternalPainter</source>
+        <translation>Использовать внешний отрисовщик</translation>
+    </message>
+    <message>
+        <source>layoutSpacing</source>
+        <translation>Интервал</translation>
     </message>
 </context>
 <context>
@@ -1844,7 +1915,7 @@ p, li { white-space: pre-wrap; }
     <name>LimeReport::ReportDesignWidget</name>
     <message>
         <source>Report file name</source>
-        <translation>Файл отчета</translation>
+        <translation>Имя файла отчета</translation>
     </message>
     <message>
         <source>Script</source>
@@ -1943,11 +2014,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Edit layouts mode</source>
-        <translation>Режим редактирования компановок</translation>
+        <translation>Режим редактирования компоновок</translation>
     </message>
     <message>
         <source>Horizontal layout</source>
-        <translation>Горизонтальная компановка</translation>
+        <translation>Горизонтальная компоновка</translation>
+    </message>
+    <message>
+        <source>Vertical layout</source>
+        <translation>Вертикальная компоновка</translation>
     </message>
     <message>
         <source>About</source>
@@ -2146,7 +2221,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Preview</source>
-        <translation>Предосмотр</translation>
+        <translation>Предпросмотр</translation>
     </message>
     <message>
         <source>Report File Change</source>
@@ -2165,6 +2240,10 @@ This preview is no longer valid.</source>
     <message>
         <source>Language %1 already exists</source>
         <translation>Язык %1 уже существует</translation>
+    </message>
+    <message>
+        <source>%1 file name</source>
+        <translation>%1 имя файла</translation>
     </message>
 </context>
 <context>
@@ -2272,7 +2351,7 @@ This preview is no longer valid.</source>
     </message>
     <message>
         <source>Preview</source>
-        <translation>Предосмотр</translation>
+        <translation>Предпросмотр</translation>
     </message>
     <message>
         <source>...</source>
@@ -2498,14 +2577,6 @@ This preview is no longer valid.</source>
         <translation>Горизонтальный шаг сетки</translation>
     </message>
     <message>
-        <source>Designer Setting</source>
-        <translation>Настройки дизайнера</translation>
-    </message>
-    <message>
-        <source>Report Setting</source>
-        <translation>Настройки отчета</translation>
-    </message>
-    <message>
         <source>Suppress absent fields and variables warning</source>
         <translation>Не выводить сообщения об отсутствии полей или переменных</translation>
     </message>
@@ -2516,6 +2587,26 @@ This preview is no longer valid.</source>
     <message>
         <source>Use dark theme</source>
         <translation>Использовать Темную тему</translation>
+    </message>
+    <message>
+        <source>Designer settings</source>
+        <translation>Настройки дизайнера</translation>
+    </message>
+    <message>
+        <source>Script editor settings</source>
+        <translation>Настройки редактора скриптов</translation>
+    </message>
+    <message>
+        <source>Font</source>
+        <translation>Шрифт</translation>
+    </message>
+    <message>
+        <source>Indent size</source>
+        <translation>Отступ</translation>
+    </message>
+    <message>
+        <source>Report settings</source>
+        <translation>Настройки отчета</translation>
     </message>
 </context>
 <context>
@@ -2608,6 +2699,10 @@ This preview is no longer valid.</source>
         <source>Watermark</source>
         <translation>Водный знак</translation>
     </message>
+    <message>
+        <source>Hide if empty</source>
+        <translation>Скрывать, если пустое</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::TextItemEditor</name>
@@ -2620,20 +2715,8 @@ This preview is no longer valid.</source>
         <translation>Содержимое</translation>
     </message>
     <message>
-        <source>Editor settings</source>
-        <translation>Настройки</translation>
-    </message>
-    <message>
-        <source>Editor font</source>
-        <translation>Шрифт редактора</translation>
-    </message>
-    <message>
         <source>Cancel</source>
         <translation>Отмена</translation>
-    </message>
-    <message>
-        <source>...</source>
-        <translation>...</translation>
     </message>
     <message>
         <source>Ok</source>
@@ -2771,6 +2854,10 @@ This preview is no longer valid.</source>
     <message>
         <source>HLayout</source>
         <translation>Горизонтальная компоновка</translation>
+    </message>
+    <message>
+        <source>VLayout</source>
+        <translation>Вертикальная компоновка</translation>
     </message>
     <message>
         <source>Image Item</source>
@@ -2931,6 +3018,10 @@ This preview is no longer valid.</source>
     <message>
         <source>Datasource manager not found</source>
         <translation>Менеджер источников данных не найден</translation>
+    </message>
+    <message>
+        <source>Export to PDF</source>
+        <translation>Экспортировать в PDF</translation>
     </message>
 </context>
 </TS>

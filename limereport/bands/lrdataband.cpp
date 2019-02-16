@@ -79,26 +79,70 @@ bool DataBand::isUnique() const
     return false;
 }
 
+QColor DataBand::bandColor() const
+{
+    return QColor(Qt::darkGreen);
+}
+
 void DataBand::preparePopUpMenu(QMenu &menu)
 {
-    DataBandDesignIntf::preparePopUpMenu(menu);
+    BandDesignIntf::preparePopUpMenu(menu);
 
-    QAction* autoSplittableAction = menu.addAction(tr("Use alternate background color"));
-    autoSplittableAction->setCheckable(true);
-    autoSplittableAction->setChecked(useAlternateBackgroundColor());
+    QAction* currAction = menu.addAction(tr("Use alternate background color"));
+    currAction->setCheckable(true);
+    currAction->setChecked(useAlternateBackgroundColor());
+
+    currAction = menu.addAction(tr("Keep footer together"));
+    currAction->setCheckable(true);
+    currAction->setChecked(keepFooterTogether());
+
+    currAction = menu.addAction(tr("Keep subdetail together"));
+    currAction->setCheckable(true);
+    currAction->setChecked(tryToKeepTogether());
+
+    currAction = menu.addAction(tr("Slice last row"));
+    currAction->setCheckable(true);
+    currAction->setChecked(sliceLastRow());
+
+    currAction = menu.addAction(tr("Start from new page"));
+    currAction->setCheckable(true);
+    currAction->setChecked(startFromNewPage());
+
+    currAction = menu.addAction(tr("Start new page"));
+    currAction->setCheckable(true);
+    currAction->setChecked(startNewPage());
+
+
+
 }
 
 void DataBand::processPopUpAction(QAction *action)
 {
-    DataBandDesignIntf::processPopUpAction(action);
+    BandDesignIntf::processPopUpAction(action);
+    if (action->text().compare(tr("Keep footer together")) == 0){
+        setProperty("keepFooterTogether",action->isChecked());
+    }
+
+    if (action->text().compare(tr("Keep subdetail together")) == 0){
+        setProperty("keepSubdetailTogether",action->isChecked());
+    }
+
+    if (action->text().compare(tr("Slice last row")) == 0){
+        setProperty("sliceLastRow",action->isChecked());
+    }
+
     if (action->text().compare(tr("Use alternate background color")) == 0){
         setProperty("useAlternateBackgroundColor",action->isChecked());
     }
-}
 
-QColor DataBand::bandColor() const
-{
-    return QColor(Qt::darkGreen);
+    if (action->text().compare(tr("Start new page")) == 0){
+        setProperty("startNewPage",action->isChecked());
+    }
+
+    if (action->text().compare(tr("Start from new page")) == 0){
+        setProperty("startFromNewPage",action->isChecked());
+    }
+
 }
 
 BaseDesignIntf *DataBand::createSameTypeItem(QObject *owner, QGraphicsItem *parent)
@@ -113,11 +157,59 @@ DataHeaderBand::DataHeaderBand(QObject *owner, QGraphicsItem *parent)
     setMarkerColor(bandColor());
 }
 
+void DataHeaderBand::preparePopUpMenu(QMenu &menu)
+{
+    BandDesignIntf::preparePopUpMenu(menu);
+    QAction* currAction = menu.addAction(tr("Reprint on each page"));
+    currAction->setCheckable(true);
+    currAction->setChecked(reprintOnEachPage());
+
+    currAction = menu.addAction(tr("Repeat on each row"));
+    currAction->setCheckable(true);
+    currAction->setChecked(repeatOnEachRow());
+
+    currAction = menu.addAction(tr("Print always"));
+    currAction->setCheckable(true);
+    currAction->setChecked(printAlways());
+}
+
+void DataHeaderBand::processPopUpAction(QAction *action)
+{
+    BandDesignIntf::processPopUpAction(action);
+    if (action->text().compare(tr("Reprint on each page")) == 0){
+        setProperty("reprintOnEachPage",action->isChecked());
+    }
+
+    if (action->text().compare(tr("Repeat on each row")) == 0){
+        setProperty("repeatOnEachRow",action->isChecked());
+    }
+
+    if (action->text().compare(tr("Print always")) == 0){
+        setProperty("printAlways",action->isChecked());
+    }
+}
+
 DataFooterBand::DataFooterBand(QObject *owner, QGraphicsItem *parent)
     :BandDesignIntf(BandDesignIntf::DataFooter,xmlTagFooter,owner,parent)
 {
     setBandTypeText(tr("DataFooter"));
     setMarkerColor(bandColor());
+}
+
+void DataFooterBand::preparePopUpMenu(QMenu &menu)
+{
+    BandDesignIntf::preparePopUpMenu(menu);
+    QAction* currAction = menu.addAction(tr("Print always"));
+    currAction->setCheckable(true);
+    currAction->setChecked(printAlways());
+}
+
+void DataFooterBand::processPopUpAction(QAction *action)
+{
+    BandDesignIntf::processPopUpAction(action);
+    if (action->text().compare(tr("Print always")) == 0){
+        setProperty("printAlways",action->isChecked());
+    }
 }
 
 }

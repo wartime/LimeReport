@@ -69,7 +69,7 @@ PageTranslation* ReportTranslation::findPageTranslation(const QString& page_name
 
 void ReportTranslation::updatePageTranslation(PageDesignIntf* page)
 {
-    PageTranslation* pageTranslation = findPageTranslation(page->objectName());
+    PageTranslation* pageTranslation = findPageTranslation(page->pageItem()->objectName());
     if (!pageTranslation){
        pageTranslation = createPageTranslation(page);
        m_pagesTranslation.append(pageTranslation);
@@ -82,8 +82,13 @@ void ReportTranslation::updatePageTranslation(PageDesignIntf* page)
                 if (itemTranslation){
                     foreach(QString propertyName, stringsForTranslation.keys()){
                         PropertyTranslation* propertyTranslation = itemTranslation->findProperty(propertyName);
+                        bool translated = propertyTranslation->sourceValue != propertyTranslation->value;
+                        if (propertyTranslation->checked)
+                            propertyTranslation->sourceHasBeenChanged = propertyTranslation->sourceValue != stringsForTranslation.value(propertyName);
+                        if (propertyTranslation->sourceHasBeenChanged)
+                            propertyTranslation->checked = false;
                         propertyTranslation->sourceValue = stringsForTranslation.value(propertyName);
-                        propertyTranslation->sourceHasBeenChanged = propertyTranslation->value != propertyTranslation->sourceValue;
+                        if (!translated) propertyTranslation->value = propertyTranslation->sourceValue;
                     }
                 } else {
                    createItemTranslation(item, pageTranslation);

@@ -31,6 +31,7 @@
 
 #include <QDate>
 #include <QStringList>
+#include <QUuid>
 #ifndef USE_QJSENGINE
 #include <QScriptValueIterator>
 #endif
@@ -353,7 +354,7 @@ void ScriptEngineManager::setDataManager(DataSourceManager *dataManager){
                 );
                 addFunction(describer);
             }
-
+            moveQObjectToScript(new DatasourceFunctions(dataManager), LimeReport::Const::DATAFUNCTIONS_MANAGER_NAME);
         }
     }
 }
@@ -383,7 +384,7 @@ QString ScriptEngineManager::expandUserVariables(QString context, RenderPass /* 
                     }
                     pos=0;
 
-                } catch (ReportError e){
+                } catch (ReportError &e){
                     dataManager()->putError(e.what());
                     if (!dataManager()->reportSettings() || dataManager()->reportSettings()->suppressAbsentFieldsAndVarsWarnings())
                         context.replace(rx.cap(0),e.what());
@@ -416,7 +417,7 @@ QString ScriptEngineManager::expandDataFields(QString context, ExpandType expand
                 QString fieldValue;
                 varValue = dataManager()->fieldData(field);
                 if (expandType == EscapeSymbols) {
-                    if (dataManager()->fieldData(field).isNull()) {
+                    if (varValue.isNull()) {
                         fieldValue="\"\"";
                     } else {
                         fieldValue = escapeSimbols(varValue.toString());
@@ -437,8 +438,8 @@ QString ScriptEngineManager::expandDataFields(QString context, ExpandType expand
                         fieldValue = replaceHTMLSymbols(varValue.toString());
                     else fieldValue = varValue.toString();
                 }
-                if (varValue.isValid())
-                    context.replace(rx.cap(0),fieldValue);
+
+                context.replace(rx.cap(0),fieldValue);
 
             } else {
                 QString error;
@@ -552,6 +553,9 @@ void ScriptEngineManager::addTableOfContentsItem(const QString& uniqKey, const Q
         m_context->tableOfContents()->setItem(uniqKey, content, 0, indent);
         if (currentBand)
             currentBand->addBookmark(uniqKey, content);
+        else if (m_context->getCurrentPage()) {
+            m_context->getCurrentPage()->addBookmark(uniqKey, content);
+        }
     }
 }
 
@@ -560,6 +564,16 @@ void ScriptEngineManager::clearTableOfContents(){
         if (m_context->tableOfContents())
             m_context->tableOfContents()->clear();
     }
+}
+
+ScriptValueType ScriptEngineManager::moveQObjectToScript(QObject* object, const QString objectName)
+{
+
+    ScriptValueType obj = scriptEngine()->globalObject().property(objectName);
+    if (!obj.isNull()) delete obj.toQObject();
+    ScriptValueType result = scriptEngine()->newQObject(object);
+    scriptEngine()->globalObject().setProperty(objectName, result);
+    return result;
 }
 
 void ScriptEngineManager::updateModel()
@@ -733,7 +747,7 @@ bool ScriptEngineManager::createCurrencyUSBasedFormatFunction(){
     fd.setDescription("currencyUSBasedFormat(\""+tr("Value")+",\""+tr("CurrencySymbol")+"\")");
     fd.setScriptWrapper(QString("function currencyUSBasedFormat(value, currencySymbol){"
                                 " if(typeof(currencySymbol)==='undefined') currencySymbol = \"\"; "
-                                "return %1.currencyFormat(value,currencySymbol);}"
+                                "return %1.currencyUSBasedFormat(value,currencySymbol);}"
                                ).arg(LimeReport::Const::FUNCTION_MANAGER_NAME)
                         );
     return addFunction(fd);
@@ -859,7 +873,6 @@ ScriptEngineManager::ScriptEngineManager()
     m_scriptEngine->setDefaultPrototype(qMetaTypeId<QComboBox*>(),
                                   m_scriptEngine->newQObject(new ComboBoxPrototype()));
 #endif
-
     createLineFunction();
     createNumberFomatFunction();
     createDateFormatFunction();
@@ -1226,6 +1239,7 @@ PageItemDesignIntf* ScriptEngineContext::getCurrentPage() const
 void ScriptEngineContext::setCurrentPage(PageItemDesignIntf* currentPage)
 {
     m_currentPage = currentPage;
+    m_currentBand = 0;
 }
 
 BandDesignIntf* ScriptEngineContext::getCurrentBand() const
@@ -1380,7 +1394,10 @@ QString ScriptEngineContext::initScript() const
 
 void ScriptEngineContext::setInitScript(const QString& initScript)
 {
-    m_initScript = initScript;
+    if (m_initScript != initScript){
+        m_initScript = initScript;
+        m_hasChanges = true;
+    }
 }
 
 DialogDescriber::Ptr DialogDescriber::create(const QString& name, const QByteArray& desc) {
@@ -1779,8 +1796,6 @@ void LimeReport::TableOfContents::clear(){
 
 }
 
-//#ifdef USE_QJSENGINE
-
 QObject* ComboBoxWrapperCreator::createWrapper(QObject *item)
 {
     QComboBox* comboBox = dynamic_cast<QComboBox*>(item);
@@ -1790,7 +1805,123 @@ QObject* ComboBoxWrapperCreator::createWrapper(QObject *item)
     return 0;
 }
 
-//#endif
+bool DatasourceFunctions::first(const QString& datasourceName)
+{
+    if (m_dataManager && m_dataManager->dataSource(datasourceName)){
+        m_dataManager->dataSource(datasourceName)->first();
+        return true;
+    }
+    return false;
+}
+
+bool DatasourceFunctions::next(const QString &datasourceName){
+    if (m_dataManager && m_dataManager->dataSource(datasourceName))
+        return m_dataManager->dataSource(datasourceName)->next();
+    return false;
+}
+
+bool DatasourceFunctions::prior(const QString& datasourceName)
+{
+    if (m_dataManager && m_dataManager->dataSource(datasourceName))
+        return m_dataManager->dataSource(datasourceName)->prior();
+    return false;
+}
+
+bool DatasourceFunctions::isEOF(const QString &datasourceName)
+{
+    if (m_dataManager && m_dataManager->dataSource(datasourceName))
+        return m_dataManager->dataSource(datasourceName)->eof();
+    return true;
+}
+
+bool DatasourceFunctions::invalidate(const QString& datasourceName)
+{
+    if (m_dataManager && m_dataManager->dataSource(datasourceName)){
+        m_dataManager->dataSourceHolder(datasourceName)->invalidate(IDataSource::DatasourceMode::RENDER_MODE);
+        return true;
+    }
+    return false;
+}
+
+QObject* DatasourceFunctions::createTableBuilder(BaseDesignIntf* horizontalLayout)
+{
+    return new TableBuilder(dynamic_cast<LimeReport::HorizontalLayout*>(horizontalLayout), dynamic_cast<DataSourceManager*>(m_dataManager));
+}
+
+TableBuilder::TableBuilder(HorizontalLayout* layout, DataSourceManager* dataManager)
+    : m_horizontalLayout(layout), m_baseLayout(0), m_dataManager(dataManager)
+{
+    if (m_horizontalLayout)
+        m_patternLayout = dynamic_cast<HorizontalLayout*>(m_horizontalLayout->cloneItem(m_horizontalLayout->itemMode()));
+}
+
+QObject* TableBuilder::addRow()
+{
+    checkBaseLayout();
+    if (m_baseLayout && m_patternLayout){
+        HorizontalLayout* newRow = new HorizontalLayout(m_baseLayout, m_baseLayout);
+        for(int i = 0; i < m_horizontalLayout->childrenCount(); ++i){
+            BaseDesignIntf* item = dynamic_cast<BaseDesignIntf*>(m_patternLayout->at(i));
+            BaseDesignIntf* cloneItem = item->cloneItem(item->itemMode(), newRow, newRow);
+            newRow->addChild(cloneItem);
+        }
+        m_baseLayout->addChild(newRow);
+        return newRow;
+    } else return 0;
+}
+
+QObject* TableBuilder::currentRow()
+{
+    checkBaseLayout();
+    if (m_baseLayout && m_baseLayout->childrenCount()>0)
+        return m_baseLayout->at(m_baseLayout->childrenCount()-1);
+    return 0;
+}
+
+void TableBuilder::fillInRowData(QObject* row)
+{
+    HorizontalLayout* layout = dynamic_cast<HorizontalLayout*>(row);
+    if (layout){
+        for (int i = 0; i < layout->childrenCount(); ++i) {
+            BaseDesignIntf* item = dynamic_cast<BaseDesignIntf*>(layout->at(i));
+            DataSourceManager* dm = dynamic_cast<DataSourceManager*>(m_dataManager);
+            if (item && dm)
+                item->updateItemSize(dm);
+        }
+    }
+}
+
+void TableBuilder::buildTable(const QString& datasourceName)
+{
+    checkBaseLayout();
+    m_dataManager->dataSourceHolder(datasourceName)->invalidate(IDataSource::RENDER_MODE);
+    m_dataManager->dataSource(datasourceName)->first();
+    bool firstTime = true;
+    QObject* row = m_horizontalLayout;
+    while(!m_dataManager->dataSource(datasourceName)->eof()){
+        if (!firstTime) row =  addRow();
+        else firstTime = false;
+        fillInRowData(row);
+        m_dataManager->dataSource(datasourceName)->next();
+    }
+}
+
+void TableBuilder::checkBaseLayout()
+{
+    if (!m_baseLayout){
+        m_baseLayout = dynamic_cast<VerticalLayout*>(m_horizontalLayout->parentItem());
+        if (!m_baseLayout){
+            m_baseLayout = new VerticalLayout(m_horizontalLayout->parent(), m_horizontalLayout->parentItem());
+            m_baseLayout->setItemLocation(m_horizontalLayout->itemLocation());
+            m_baseLayout->setPos(m_horizontalLayout->pos());
+            m_baseLayout->setWidth(m_horizontalLayout->width());
+            m_baseLayout->setHeight(0);
+            m_baseLayout->addChild(m_horizontalLayout);
+            m_baseLayout->setObjectName(QUuid::createUuid().toString());
+            m_baseLayout->setItemTypeName("VerticalLayout");
+        }
+    }
+}
 
 #ifndef USE_QJSENGINE
 void ComboBoxPrototype::addItem(const QString &text)

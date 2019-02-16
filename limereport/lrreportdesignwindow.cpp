@@ -88,7 +88,11 @@ ReportDesignWindow::ReportDesignWindow(ReportEnginePrivateInterface* report, QWi
     m_lblReportName = new QLabel(report->reportFileName(),this);
     m_statusBar->insertWidget(0,m_lblReportName);
     setStatusBar(m_statusBar);
-    setWindowTitle("Lime Report Designer");
+
+    QString windowTitle = "Lime Report Designer";
+    if (!report->reportName().isEmpty())
+        windowTitle = report->reportName() + " - " + windowTitle;
+    setWindowTitle(windowTitle);
     showDefaultEditors();
     showDefaultToolBars();
     restoreSetting();
@@ -221,6 +225,10 @@ void ReportDesignWindow::createActions()
     m_addHLayout->setIcon(QIcon(":/report/images/hlayout"));
     connect(m_addHLayout,SIGNAL(triggered()),this,SLOT(slotHLayout()));
 
+    m_addVLayout = new QAction(tr("Vertical layout"),this);
+    m_addVLayout->setIcon(QIcon(":/report/images/vlayout"));
+    connect(m_addVLayout,SIGNAL(triggered()),this,SLOT(slotVLayout()));
+
     m_aboutAction = new QAction(tr("About"),this);
     m_aboutAction->setIcon(QIcon(":/report/images/copyright"));
     connect(m_aboutAction,SIGNAL(triggered()),this,SLOT(slotShowAbout()));
@@ -258,6 +266,7 @@ void ReportDesignWindow::createReportToolBar()
     createItemsActions();
     m_reportToolBar->addSeparator();
     m_reportToolBar->addAction(m_addHLayout);
+    m_reportToolBar->addAction(m_addVLayout);
     m_reportToolBar->addSeparator();
     m_reportToolBar->addAction(m_deleteItemAction);
 
@@ -463,7 +472,7 @@ void ReportDesignWindow::createMainMenu()
 
 void ReportDesignWindow::initReportEditor(ReportEnginePrivateInterface* report)
 {
-    m_reportDesignWidget=new ReportDesignWidget(report,this,this);
+    m_reportDesignWidget=new ReportDesignWidget(report, m_settings, this,this);
     setCentralWidget(m_reportDesignWidget);
     connect(m_reportDesignWidget,SIGNAL(itemSelected(LimeReport::BaseDesignIntf*)),
             this,SLOT(slotItemSelected(LimeReport::BaseDesignIntf*)));
@@ -641,6 +650,7 @@ void ReportDesignWindow::updateRedoUndo()
 
 void ReportDesignWindow::startNewReport()
 {
+    m_reportDesignWidget->saveState();
     m_reportDesignWidget->clear();
     m_reportDesignWidget->createStartPage();
     m_lblReportName->setText("");
@@ -651,15 +661,17 @@ void ReportDesignWindow::startNewReport()
     m_newReportHeader->setEnabled(true);
     m_newReportFooter->setEnabled(true);
     m_editorTabType = ReportDesignWidget::Page;
-    //showDefaultEditors();
     showDefaultToolBars();
+    m_reportDesignWidget->report()->dataManager()->dropChanges();
+    m_reportDesignWidget->report()->scriptContext()->dropChanges();
+    m_reportDesignWidget->loadState();
+
 }
 
 void ReportDesignWindow::writePosition()
 {
     settings()->beginGroup("DesignerWindow");
     settings()->setValue("Geometry",saveGeometry());
-//    settings()->setValue("State",saveState());
     settings()->endGroup();
 }
 
@@ -695,7 +707,7 @@ void ReportDesignWindow::writeState()
         ++it;
     }
     settings()->endGroup();
-    m_reportDesignWidget->saveState(settings());
+    m_reportDesignWidget->saveState();
 }
 
 void ReportDesignWindow::createRecentFilesMenu()
@@ -813,7 +825,7 @@ void ReportDesignWindow::restoreSetting()
     }
     settings()->endGroup();
 
-    m_reportDesignWidget->loadState(settings());
+    m_reportDesignWidget->loadState();
     m_useGridAction->setChecked(m_reportDesignWidget->useGrid());
     createRecentFilesMenu();
 }
@@ -881,6 +893,7 @@ void ReportDesignWindow::slotNewReport()
         m_lblReportName->setText("");
         startNewReport();
         m_deletePageAction->setEnabled(false);
+        setWindowTitle("Lime Report Designer");
     }
 }
 
@@ -1044,13 +1057,19 @@ void ReportDesignWindow::slotCommandHistoryChanged()
 
 void ReportDesignWindow::slotSaveReport()
 {
+    if (m_reportDesignWidget->emitSaveReport()) return; // report save as'd via signal
+
     m_reportDesignWidget->save();
-    m_lblReportName->setText(m_reportDesignWidget->reportFileName());
-    if (!m_reportDesignWidget->reportFileName().isEmpty()) addRecentFile(m_reportDesignWidget->reportFileName());
+
+    QString filename = m_reportDesignWidget->reportFileName();
+    m_lblReportName->setText(filename);
+    if(!filename.isEmpty()) addRecentFile(filename);
 }
 
 void ReportDesignWindow::slotSaveReportAs()
 {
+    if (m_reportDesignWidget->emitSaveReportAs()) return; // report save as'd via signal
+
     QString fileName = QFileDialog::getSaveFileName(this,tr("Report file name"),"","Report files(*.lrxml);; All files(*)");
     if (!fileName.isEmpty()){
         m_reportDesignWidget->saveToFile(fileName);
@@ -1061,49 +1080,49 @@ void ReportDesignWindow::slotSaveReportAs()
 
 void ReportDesignWindow::slotLoadReport()
 {
-    if (checkNeedToSave()){
-        if (!m_reportDesignWidget->emitLoadReport()){
-            QString fileName = QFileDialog::getOpenFileName(
-                        this,tr("Report file name"),
-                        m_reportDesignWidget->report()->currentReportsDir(),
-                        "Report files(*.lrxml);; All files(*)"
-                        );
-            if (!fileName.isEmpty()) {
-                QApplication::processEvents();
-                setCursor(Qt::WaitCursor);
-                m_reportDesignWidget->clear();
-                if (m_reportDesignWidget->loadFromFile(fileName)){
-                	m_lblReportName->setText(fileName);
-                	m_propertyModel->setObject(0);
-                	updateRedoUndo();
-                	setWindowTitle(m_reportDesignWidget->report()->reportName() + " - Lime Report Designer");
-                	if (!m_recentFiles.contains(fileName)){
-                    	if (m_recentFiles.count()==10){
-                        	QMap<QString, QDateTime>::const_iterator it = m_recentFiles.constBegin();
-                        	QDateTime minDate = QDateTime::currentDateTime();
-                        	while (it != m_recentFiles.constEnd()) {
-                            	if (minDate>it.value()) minDate = it.value();
-                            	++it;
-                        	}
-                        	m_recentFiles.remove(m_recentFiles.key(minDate));
-                    	}
-                    	m_recentFiles.insert(fileName,QDateTime::currentDateTime());
-                	} else {
-                    	m_recentFiles[fileName] = QDateTime::currentDateTime();
-                	}
-                	createRecentFilesMenu();
-                    m_deletePageAction->setEnabled(m_reportDesignWidget->report()->pageCount()>1);
-            	} else {
-            		slotNewReport();
-            	}
-                unsetCursor();
-            	setWindowTitle(m_reportDesignWidget->report()->reportName() + " - Lime Report Designer");
-                addRecentFile(fileName);
-                m_editorTabType = ReportDesignWidget::Page;
-            }
-        }
+    if (!checkNeedToSave()) return; // don't need to save
 
+    if (m_reportDesignWidget->emitLoadReport()) return; // report loaded via signal
+
+    QString fileName = QFileDialog::getOpenFileName(
+                this,tr("Report file name"),
+                m_reportDesignWidget->report()->currentReportsDir(),
+                "Report files(*.lrxml);; All files(*)"
+                );
+    if (!fileName.isEmpty()) {
+        QApplication::processEvents();
+        setCursor(Qt::WaitCursor);
+        m_reportDesignWidget->clear();
+        if (m_reportDesignWidget->loadFromFile(fileName)){
+            m_lblReportName->setText(fileName);
+            m_propertyModel->setObject(0);
+            updateRedoUndo();
+            setWindowTitle(m_reportDesignWidget->report()->reportName() + " - Lime Report Designer");
+            if (!m_recentFiles.contains(fileName)){
+                if (m_recentFiles.count()==10){
+                    QMap<QString, QDateTime>::const_iterator it = m_recentFiles.constBegin();
+                    QDateTime minDate = QDateTime::currentDateTime();
+                    while (it != m_recentFiles.constEnd()) {
+                        if (minDate>it.value()) minDate = it.value();
+                        ++it;
+                    }
+                    m_recentFiles.remove(m_recentFiles.key(minDate));
+                }
+                m_recentFiles.insert(fileName,QDateTime::currentDateTime());
+            } else {
+                m_recentFiles[fileName] = QDateTime::currentDateTime();
+            }
+            createRecentFilesMenu();
+            m_deletePageAction->setEnabled(m_reportDesignWidget->report()->pageCount()>1);
+        } else {
+            slotNewReport();
+        }
+        unsetCursor();
+        setWindowTitle(m_reportDesignWidget->report()->reportName() + " - Lime Report Designer");
+        addRecentFile(fileName);
+        m_editorTabType = ReportDesignWidget::Page;
     }
+
 }
 
 void ReportDesignWindow::slotZoomIn()
@@ -1163,6 +1182,11 @@ void ReportDesignWindow::slotEditLayoutMode()
 void ReportDesignWindow::slotHLayout()
 {
     m_reportDesignWidget->addHLayout();
+}
+
+void ReportDesignWindow::slotVLayout()
+{
+    m_reportDesignWidget->addVLayout();
 }
 
 void ReportDesignWindow::slotTest()

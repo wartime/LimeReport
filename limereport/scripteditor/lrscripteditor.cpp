@@ -14,13 +14,15 @@ namespace LimeReport{
 
 ScriptEditor::ScriptEditor(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::ScriptEditor), m_reportEngine(0), m_page(0)
+    ui(new Ui::ScriptEditor), m_reportEngine(0), m_page(0), m_tabIndention(4)
 {
     ui->setupUi(this);
     setFocusProxy(ui->textEdit);
     m_completer = new ReportStructureCompleater(this);
     ui->textEdit->setCompleter(m_completer);
+    ui->textEdit->setTabStopWidth(ui->textEdit->fontMetrics().width("0")*m_tabIndention);
     connect(ui->splitter, SIGNAL(splitterMoved(int,int)), this, SIGNAL(splitterMoved(int,int)));
+    connect(ui->textEdit, SIGNAL(textChanged()), this, SIGNAL(textChanged()));
 }
 
 ScriptEditor::~ScriptEditor()
@@ -79,58 +81,16 @@ void ScriptEditor::setPageBand(BandDesignIntf* band)
     }
 }
 
+void ScriptEditor::setTabIndention(int charCount)
+{
+    if (m_tabIndention != charCount){
+        ui->textEdit->setTabStopWidth(ui->textEdit->fontMetrics().width("W")*charCount);
+        m_tabIndention = charCount;
+    }
+}
+
 void ScriptEditor::initCompleter()
 {
-//    QStringList dataWords;
-
-//    DataSourceManager* dm = 0;
-//    if (m_reportEngine)
-//        dm = m_reportEngine->dataManager();
-//    if (m_page)
-//        dm = m_page->datasourceManager();
-
-//#ifdef USE_QJSENGINE
-//    ScriptEngineManager& se = LimeReport::ScriptEngineManager::instance();
-//    QJSValue globalObject = se.scriptEngine()->globalObject();
-//    QJSValueIterator it(globalObject);
-//    while (it.hasNext()){
-//        it.next();
-//        if (it.value().isCallable() ){
-//            dataWords << it.name();
-//        }
-//    }
-//#endif
-//    foreach(const QString &dsName,dm->dataSourceNames()){
-//        dataWords << dsName;
-//        foreach(const QString &field, dm->fieldNames(dsName)){
-//            dataWords<<dsName+"."+field;
-//        }
-//    }
-
-//    foreach (QString varName, dm->variableNames()) {
-//        dataWords << varName.remove("#");
-//    }
-
-//    if (m_reportEngine){
-//        for ( int i = 0; i < m_reportEngine->pageCount(); ++i){
-//            PageDesignIntf* page = m_reportEngine->pageAt(i);
-//            dataWords << page->pageItem()->objectName();
-//            QMetaObject const * mo = page->pageItem()->metaObject();
-//            for(int i = mo->methodOffset(); i < mo->methodCount(); ++i)
-//            {
-//                if (mo->method(i).methodType() == QMetaMethod::Signal) {
-//                    dataWords << page->pageItem()->objectName() +"."+QString::fromLatin1(mo->method(i).name());
-//                }
-//            }
-//            dataWords << page->pageItem()->objectName()+".beforeRender";
-//            dataWords << page->pageItem()->objectName()+".afterRender";
-//            foreach (BaseDesignIntf* item, page->pageItem()->childBaseItems()){
-//                addItemToCompleater(page->pageItem()->objectName(), item, dataWords);
-//            }
-//        }
-//    }
-
-//    dataWords.sort();
     if (m_reportEngine)
         m_completer->updateCompleaterModel(m_reportEngine);
     else
@@ -165,27 +125,6 @@ QFont ScriptEditor::editorFont()
 QString ScriptEditor::toPlainText()
 {
     return ui->textEdit->toPlainText();
-}
-
-void ScriptEditor::addItemToCompleater(const QString& pageName, BaseDesignIntf* item, QStringList& dataWords)
-{
-    BandDesignIntf* band = dynamic_cast<BandDesignIntf*>(item);
-    if (band){
-        dataWords << band->objectName();
-        dataWords << pageName+"_"+band->objectName();
-        dataWords << pageName+"_"+band->objectName()+".beforeRender";
-        dataWords << pageName+"_"+item->objectName()+".afterData";
-        dataWords << pageName+"_"+band->objectName()+".afterRender";
-        foreach (BaseDesignIntf* child, band->childBaseItems()){
-            addItemToCompleater(pageName, child, dataWords);
-        }
-    } else {
-        dataWords << item->objectName();
-        dataWords << pageName+"_"+item->objectName();
-        dataWords << pageName+"_"+item->objectName()+".beforeRender";
-        dataWords << pageName+"_"+item->objectName()+".afterData";
-        dataWords << pageName+"_"+item->objectName()+".afterRender";
-    }
 }
 
 void ScriptEditor::on_twData_doubleClicked(const QModelIndex &index)
@@ -233,7 +172,7 @@ QStringList ReportStructureCompleater::splitPath(const QString &path) const
     return path.split(".");
 }
 
-void ReportStructureCompleater::addAdditionalDatawords(DataSourceManager* dataManager){
+void ReportStructureCompleater::addAdditionalDatawords(QStandardItemModel* model, DataSourceManager* dataManager){
 
     foreach(const QString &dsName,dataManager->dataSourceNames()){
         QStandardItem* dsNode = new QStandardItem;
@@ -243,13 +182,13 @@ void ReportStructureCompleater::addAdditionalDatawords(DataSourceManager* dataMa
             fieldNode->setText(field);
             dsNode->appendRow(fieldNode);
         }
-        m_model.invisibleRootItem()->appendRow(dsNode);
+        model->invisibleRootItem()->appendRow(dsNode);
     }
 
     foreach (QString varName, dataManager->variableNames()) {
         QStandardItem* varNode = new QStandardItem;
         varNode->setText(varName.remove("#"));
-        m_model.invisibleRootItem()->appendRow(varNode);
+        model->invisibleRootItem()->appendRow(varNode);
     }
 
 #ifdef USE_QJSENGINE
@@ -260,8 +199,33 @@ void ReportStructureCompleater::addAdditionalDatawords(DataSourceManager* dataMa
         it.next();
         if (it.value().isCallable() ){
             QStandardItem* itemNode = new QStandardItem;
-            itemNode->setText(it.name());
-            m_model.invisibleRootItem()->appendRow(itemNode);
+            itemNode->setText(it.name()+"()");
+            model->invisibleRootItem()->appendRow(itemNode);
+        }
+        if (it.value().isQObject()){
+            if (it.value().toQObject()){
+                if (model->findItems(it.name()).isEmpty()){
+                    QStandardItem* objectNode = new QStandardItem;
+                    objectNode->setText(it.name());
+                    objectNode->setIcon(QIcon(":/report/images/object"));
+                    for (int i = 0; i< it.value().toQObject()->metaObject()->methodCount();++i){
+                        if (it.value().toQObject()->metaObject()->method(i).methodType() == QMetaMethod::Method){
+                            QStandardItem* methodNode = new QStandardItem;
+                            QMetaMethod m = it.value().toQObject()->metaObject()->method(i);
+                            QString methodSignature = m.name() + "(";
+                            bool isFirst = true;
+                            for (int j = 0; j <  m.parameterCount(); ++j){
+                                    methodSignature += (isFirst ? "" : ",") + m.parameterTypes()[j]+" "+m.parameterNames()[j];
+                                if (isFirst) isFirst = false;
+                            }
+                            methodSignature += ")";
+                            methodNode->setText(methodSignature);
+                            objectNode->appendRow(methodNode);
+                        }
+                    }
+                    model->invisibleRootItem()->appendRow(objectNode);
+                }
+            }
         }
     }
 #endif
@@ -274,7 +238,6 @@ void ReportStructureCompleater::updateCompleaterModel(ReportEnginePrivateInterfa
         m_model.clear();
         QIcon signalIcon(":/report/images/signal");
         QIcon propertyIcon(":/report/images/property");
-        addAdditionalDatawords(report->dataManager());
 
         for ( int i = 0; i < report->pageCount(); ++i){
             PageDesignIntf* page = report->pageAt(i);
@@ -301,15 +264,17 @@ void ReportStructureCompleater::updateCompleaterModel(ReportEnginePrivateInterfa
             foreach (BaseDesignIntf* item, page->pageItem()->childBaseItems()){
                 addChildItem(item, itemNode->text(), m_model.invisibleRootItem());
             }
-
         }
+
+        addAdditionalDatawords(&m_model, report->dataManager());
+        m_model.sort(0);
     }
 }
 
 void ReportStructureCompleater::updateCompleaterModel(DataSourceManager *dataManager)
 {
     m_model.clear();
-    addAdditionalDatawords(dataManager);
+    addAdditionalDatawords(&m_model, dataManager);
 }
 
 QStringList ReportStructureCompleater::extractSignalNames(BaseDesignIntf *item)
@@ -397,6 +362,8 @@ void ReportStructureCompleater::addChildItem(BaseDesignIntf *item, const QString
 }
 
 } // namespace LimeReport
+
+
 
 
 

@@ -48,11 +48,13 @@
 
 class QFileSystemWatcher;
 
+
 namespace LimeReport{
 
 class PageDesignIntf;
 class PrintRange;
 class ReportDesignWindow;
+class ReportExporterInterface;
 
 class ReportEnginePrivateInterface {
 public:
@@ -67,14 +69,16 @@ public:
     virtual DataSourceManager*      dataManager() = 0;
     virtual QString                 reportFileName() = 0;
     virtual void                    setReportFileName(const QString& reportFileName) = 0;
-    virtual void                    emitSaveFinished() = 0;
     virtual bool                    isNeedToSave() = 0;
-    virtual void                    emitSaveReport() = 0;
+    virtual bool                    emitSaveReport() = 0;
+    virtual bool                    emitSaveReportAs() = 0;
+    virtual void                    emitSaveFinished() = 0;
     virtual bool                    saveToFile(const QString& fileName = "") = 0;
     virtual bool                    isSaved() = 0;
     virtual QString                 reportName() = 0;
     virtual bool                    loadFromFile(const QString& fileName, bool autoLoadPreviewOnChange) = 0;
     virtual bool                    emitLoadReport() = 0;
+    virtual void                    emitLoadFinished() = 0;
     virtual void                    clearSelection() = 0;
     virtual bool                    printReport(QPrinter *printer=0) = 0;
     virtual void                    previewReport(PreviewHints hints = PreviewBarsUserSetting) = 0;
@@ -89,7 +93,23 @@ public:
     virtual void                    setCurrentDesignerLanguage(QLocale::Language language) = 0;
 };
 
-class ReportEnginePrivate : public QObject, public ICollectionContainer, public ITranslationContainer,
+class PrintProcessor{
+public:
+    explicit PrintProcessor(QPrinter* printer);
+    ~PrintProcessor(){ if (m_painter) delete m_painter;}
+    bool printPage(LimeReport::PageItemDesignIntf::Ptr page);
+private:
+    void initPrinter(PageItemDesignIntf* page);
+private:
+    QPrinter* m_printer;
+    QPainter* m_painter;
+    bool m_firstPage;
+};
+
+class ReportEnginePrivate : public QObject,
+        public ICollectionContainer,
+        public ITranslationContainer,
+        public IExternalPainter,
         public ReportEnginePrivateInterface
 {
     Q_OBJECT
@@ -104,6 +124,7 @@ class ReportEnginePrivate : public QObject, public ICollectionContainer, public 
 public:
     static void printReport(ItemsReaderIntf::Ptr reader, QPrinter &printer);
     static void printReport(ReportPages pages, QPrinter &printer);
+    static void printReport(ReportPages pages, QMap<QString,QPrinter*>printers, bool printToAllPrinters = false);
     Q_INVOKABLE QStringList aviableReportTranslations();
     Q_INVOKABLE void setReportTranslation(const QString& languageName);
 public:
@@ -127,9 +148,11 @@ public:
 
     void    clearReport();
     bool    printReport(QPrinter *printer=0);
+    bool    printReport(QMap<QString, QPrinter*>printers, bool printToAllPrinters);
     bool    printPages(ReportPages pages, QPrinter *printer);
     void    printToFile(const QString& fileName);
     bool    printToPDF(const QString& fileName);
+    bool    exportReport(QString exporterName, const QString &fileName = "", const QMap<QString, QVariant>& params = QMap<QString, QVariant>());
     void    previewReport(PreviewHints hints = PreviewBarsUserSetting);
 
     ReportDesignWindowInterface* getDesignerWindow();
@@ -148,9 +171,11 @@ public:
     bool    isNeedToSave();
     QString lastError();
     ReportEngine * q_ptr;
-    void emitSaveReport();
+    bool emitSaveReport();
+    bool emitSaveReportAs();
     bool emitLoadReport();
     void emitSaveFinished();
+    void emitLoadFinished();
     void emitPrintedToPDF(QString fileName);
     bool isSaved();
     void setCurrentReportsDir(const QString& dirName);
@@ -186,6 +211,9 @@ public:
     QList<QLocale::Language> designerLanguages();
     QLocale::Language currentDesignerLanguage();
     void setCurrentDesignerLanguage(QLocale::Language language);
+    ScaleType previewScaleType();
+    int       previewScalePercent();
+    void      setPreviewScaleType(const ScaleType &previewScaleType, int percent = 0);
 signals:
     void    pagesLoadFinished();
     void    datasourceCollectionLoadFinished(const QString& collectionName);
@@ -193,16 +221,17 @@ signals:
     void    renderStarted();
     void    renderFinished();
     void    renderPageFinished(int renderedPageCount);
+    void    onSave(bool& saved);
+    void    onSaveAs(bool& saved);
     void    onLoad(bool& loaded);
-    void    onSave();
     void    saveFinished();
-
-    void    loaded();
+    void    loadFinished();
     void    printedToPDF(QString fileName);
 
     void    getAviableLanguages(QList<QLocale::Language>* languages);
     void    currentDefaulLanguageChanged(QLocale::Language);
     QLocale::Language  getCurrentDefaultLanguage();
+    void    externalPaint(const QString& objectName, QPainter* painter, const QStyleOptionGraphicsItem*);
 
 public slots:
     bool    slotLoadFromFile(const QString& fileName);
@@ -232,6 +261,9 @@ private:
     PageItemDesignIntf *getPageByName(const QString& pageName);
     ATranslationProperty fakeTranslationReader(){ return ATranslationProperty();}
     PageItemDesignIntf *createRenderingPage(PageItemDesignIntf *page);
+    void initReport();
+    void paintByExternalPainter(const QString& objectName, QPainter* painter, const QStyleOptionGraphicsItem* options);
+    void dropChanges(){ m_datasources->dropChanges(); m_scriptEngineContext->dropChanges();}
 private:
     QList<PageDesignIntf*> m_pages;
     QList<PageItemDesignIntf*> m_renderingPages;
@@ -260,9 +292,13 @@ private:
     QLocale::Language m_reportLanguage;
     void activateLanguage(QLocale::Language language);
     Qt::LayoutDirection m_previewLayoutDirection;
-    LimeReportPluginInterface* m_designerFactory;
+    LimeReportDesignerPluginInterface* m_designerFactory;
     QString m_styleSheet;
     QLocale::Language m_currentDesignerLanguage;
+    QMap<QString, ReportExporterInterface*> exporters;
+    ScaleType m_previewScaleType;
+    int m_previewScalePercent;
+    int m_startTOCPage;
 };
 
 }

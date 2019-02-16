@@ -170,7 +170,7 @@ QString CodeEditor::textUnderCursor() const
             currentText = blockText.at(i-1) + currentText;
         else break;
     }
-    return currentText;
+    return currentText.trimmed();
 }
 
 bool CodeEditor::matchLeftParenthesis(QTextBlock currentBlock, QChar parenthesisType, int i, int numLeftParentheses)
@@ -282,8 +282,8 @@ void CodeEditor::insertCompletion(const QString &completion)
              return;
     QTextCursor tc = textCursor();
     int extra = completion.length() - m_compleater->completionPrefix().length();
-    tc.movePosition(QTextCursor::Left);
-    tc.movePosition(QTextCursor::EndOfWord);
+    //tc.movePosition(QTextCursor::Left);
+    //tc.movePosition(QTextCursor::EndOfWord);
     tc.insertText(completion.right(extra));
     setTextCursor(tc);
 }

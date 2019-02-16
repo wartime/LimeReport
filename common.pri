@@ -1,4 +1,18 @@
-CONFIG *= build_translations
+#BINARY_RESULT_DIR = $${TOP_BUILD_DIR}
+
+isEmpty(BINARY_RESULT_DIR) {
+    BINARY_RESULT_DIR = $${PWD}
+}
+
+message(TOP_BUILD_DIR: $$TOP_BUILD_DIR)
+
+#!contains(CONFIG, config_build_dir){
+#    TOP_BUILD_DIR = $${PWD}
+#}
+
+!contains(CONFIG, no_build_translations){
+    CONFIG += build_translations
+}
 #CONFIG *= easy_profiler
 
 !contains(CONFIG, no_zint){
@@ -18,13 +32,12 @@ contains(CONFIG, easy_profiler){
 
 !contains(CONFIG, qtscriptengine){
 greaterThan(QT_MAJOR_VERSION, 4){
+greaterThan(QT_MINOR_VERSION, 5){
     CONFIG *= qjsengine
-#greaterThan(QT_MINOR_VERSION, 5){
-#    CONFIG *= qjsengine
-#}
-#lessThan(QT_MINOR_VERSION, 6){
-#    CONFIG *= qtscriptengine
-#}
+}
+lessThan(QT_MINOR_VERSION, 6){
+    CONFIG *= qtscriptengine
+}
 }
 lessThan(QT_MAJOR_VERSION, 5){
     CONFIG *= qtscriptengine
@@ -67,7 +80,8 @@ CONFIG(release, debug|release){
     BUILD_TYPE = debug
 }
 
-BUILD_DIR = $$PWD/build/$${QT_VERSION}
+BUILD_DIR = $${BINARY_RESULT_DIR}/build/$${QT_VERSION}
+
 DEST_INCLUDE_DIR = $$PWD/include
 unix{
     ARCH_DIR       = $${OUT_PWD}/unix
@@ -105,7 +119,7 @@ RCC_DIR        = $${ARCH_DIR}/$${BUILD_TYPE}/rcc
 
 LIMEREPORT_VERSION_MAJOR = 1
 LIMEREPORT_VERSION_MINOR = 4
-LIMEREPORT_VERSION_RELEASE = 78
+LIMEREPORT_VERSION_RELEASE = 123
 
 LIMEREPORT_VERSION = '$${LIMEREPORT_VERSION_MAJOR}.$${LIMEREPORT_VERSION_MINOR}.$${LIMEREPORT_VERSION_RELEASE}'
 DEFINES *= LIMEREPORT_VERSION_STR=\\\"$${LIMEREPORT_VERSION}\\\"

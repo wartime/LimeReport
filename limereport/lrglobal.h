@@ -46,7 +46,7 @@
 //#include <QJSEngine>
 #include <QQmlEngine>
 #else
-#include <QScriptEngine>
+#include <QtScript/QScriptEngine>
 #endif
 
 namespace LimeReport {
@@ -82,10 +82,10 @@ namespace Const{
     const qreal BAND_NAME_TEXT_OPACITY = 0.6;
     const qreal SELECTION_OPACITY = 0.3;
     const QString FIELD_RX = "\\$D\\s*\\{\\s*([^{}]*)\\s*\\}";
-    const QString VARIABLE_RX = "\\$V\\s*\\{\\s*([^{}]*)\\s*\\}";
-    const QString NAMED_VARIABLE_RX = "\\$V\\s*\\{\\s*(%1)\\s*\\}";
+    const QString VARIABLE_RX = "\\$V\\s*\\{\\s*(?:([^\\{\\},]*)|(?:([^\\{\\}]*)\\s*,\\s*([^\\{\\}]*)))\\s*\\}";
+    const QString NAMED_VARIABLE_RX = "\\$V\\s*\\{\\s*(?:(%1)|(?:(%1)\\s*,\\s*([^\\{\\}]*)))\\s*\\}";
     const QString SCRIPT_RX = "\\$S\\s*\\{(.*)\\}";    
-    const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*((?:(?:\\\")|(?:))(?:(?:\\$(?:(?:D\\{\\s*\\w*.\\w*\\s*\\})|(?:V\\{\\s*\\w*\\s*\\})|(?:S\\{.+\\})))|(?:\\w*))(?:(?:\\\")|(?:)))(?:(?:\\s*,\\s*(?:\\\"(\\w*)\\\"))|(?:))(?:(?:\\s*,\\s*(?:(\\w*)))|(?:))\\)";
+    const QString GROUP_FUNCTION_PARAM_RX = "\\(\\s*((?:(?:\\\")|(?:))(?:(?:\\$(?:(?:D\\{\\s*\\w*..*\\})|(?:V\\{\\s*\\w*\\s*\\})|(?:S\\{.+\\})))|(?:\\w*))(?:(?:\\\")|(?:)))(?:(?:\\s*,\\s*(?:\\\"(\\w*)\\\"))|(?:))(?:(?:\\s*,\\s*(?:(\\w*)))|(?:))\\)";
     const int DATASOURCE_INDEX = 3;
     const int VALUE_INDEX = 2;
     const int EXPRESSION_ARGUMENT_INDEX = 1;
@@ -94,7 +94,9 @@ namespace Const{
     const QString GROUP_FUNCTION_NAME_RX = "%1\\s*\\((.*[^\\)])\\)";
     const int SCENE_MARGIN = 50;
     const QString FUNCTION_MANAGER_NAME = "LimeReport";
+    const QString DATAFUNCTIONS_MANAGER_NAME = "DatasourceFunctions";
     const QString EOW("~!@#$%^&*()+{}|:\"<>?,/;'[]\\-=");
+    const int DEFAULT_TAB_INDENTION = 4;
 
 }
     QString extractClassName(QString className);
@@ -106,6 +108,7 @@ namespace Const{
     enum ExpandType {EscapeSymbols, NoEscapeSymbols, ReplaceHTMLSymbols};
     enum RenderPass {FirstPass = 1, SecondPass = 2};
     enum ArrangeType {AsNeeded, Force};
+    enum ScaleType {FitWidth, FitPage, OneToOne, Percents};
     enum PreviewHint{ShowAllPreviewBars = 0,
                      HidePreviewToolBar = 1,
                      HidePreviewMenuBar = 2,
@@ -118,7 +121,7 @@ namespace Const{
 
     class ReportError : public std::runtime_error{
     public:
-        ReportError(const QString& message):std::runtime_error(message.toStdString()){}
+        ReportError(const QString& message);
     };
 
     class ReportSettings{
@@ -129,6 +132,18 @@ namespace Const{
         void setSuppressAbsentFieldsAndVarsWarnings(bool suppressAbsentFieldsAndVarsWarnings);
     private:
         bool m_suppressAbsentFieldsAndVarsWarnings;
+    };
+
+    class IExternalPainter{
+    public:
+        virtual void paintByExternalPainter(const QString& objectName, QPainter* painter, const QStyleOptionGraphicsItem* options) = 0;
+        virtual ~IExternalPainter();
+    };
+
+    class IPainterProxy{
+    public:
+        virtual void setExternalPainter(IExternalPainter* externalPainter) = 0;
+        virtual ~IPainterProxy();
     };
 
 #ifdef HAVE_QT4
@@ -144,6 +159,7 @@ namespace Const{
     static inline QJSValue getJSValue(QJSEngine &e, T *p)
     {
         QJSValue res = e.newQObject(p);
+        QQmlEngine::setObjectOwnership(p, QQmlEngine::CppOwnership);
         return res;
     }
 #else

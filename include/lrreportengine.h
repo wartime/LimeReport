@@ -80,10 +80,12 @@ public:
     explicit ReportEngine(QObject *parent = 0);
     ~ReportEngine();
     bool    printReport(QPrinter *printer=0);
+    bool    printReport(QMap<QString, QPrinter*> printers, bool printToAllPrinters = false);
     bool    printPages(ReportPages pages, QPrinter *printer);
     void    printToFile(const QString& fileName);
     PageDesignIntf *createPreviewScene(QObject *parent = 0);
     bool    printToPDF(const QString& fileName);
+    bool    exportReport(QString exporterName, const QString &fileName = "", const QMap<QString, QVariant>& params = QMap<QString, QVariant>());
     void    previewReport(PreviewHints hints = PreviewBarsUserSetting);
     void    designReport();
     ReportDesignWindowInterface* getDesignerWindow();
@@ -115,20 +117,26 @@ public:
     void setPreviewLayoutDirection(const Qt::LayoutDirection& previewLayoutDirection);
     QList<QLocale::Language> designerLanguages();
     QLocale::Language currentDesignerLanguage();
+    ScaleType previewScaleType();
+    int  previewScalePercent();
+    void setPreviewScaleType(const ScaleType &previewScaleType, int percent = 0);
 signals:
+    void cleared();
     void renderStarted();
     void renderFinished();
     void renderPageFinished(int renderedPageCount);
+    void onSave(bool& saved);
+    void onSaveAs(bool& saved);
     void onLoad(bool& loaded);
-    void onSave();
     void saveFinished();
-
-    void loaded();
+    void loadFinished();
     void printedToPDF(QString fileName);
 
     void getAviableLanguages(QList<QLocale::Language>* languages);
     void currentDefaulLanguageChanged(QLocale::Language);
     QLocale::Language getCurrentDefaultLanguage();
+
+    void  externalPaint(const QString& objectName, QPainter* painter, const QStyleOptionGraphicsItem*);
 
 public slots:
     void cancelRender();

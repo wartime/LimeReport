@@ -52,6 +52,10 @@
 #include "lrscriptenginemanagerintf.h"
 #include "lrcallbackdatasourceintf.h"
 #include "lrcollection.h"
+#include "lrdatasourceintf.h"
+#include "lrdatasourcemanagerintf.h"
+#include "lrhorizontallayout.h"
+#include "lrverticallayout.h"
 
 namespace LimeReport{
 
@@ -170,7 +174,9 @@ public:
 #ifdef HAVE_UI_LOADER
     typedef QSharedPointer<QDialog> DialogPtr;
 #endif
-    explicit ScriptEngineContext(QObject* parent=0):QObject(parent), m_tableOfContents(new TableOfContents(this)){}
+    explicit ScriptEngineContext(QObject* parent=0):
+        QObject(parent), m_currentBand(0), m_currentPage(0),
+        m_tableOfContents(new TableOfContents(this)), m_hasChanges(false) {}
 #ifdef HAVE_UI_LOADER
     void    addDialog(const QString& name, const QByteArray& description);
     bool    changeDialog(const QString& name, const QByteArray &description);
@@ -196,7 +202,8 @@ public:
     void setCurrentPage(PageItemDesignIntf* currentPage);
     TableOfContents* tableOfContents() const;
     void setTableOfContents(TableOfContents* tableOfContents);
-
+    void dropChanges(){ m_hasChanges = false;}
+    bool hasChanges(){ return m_hasChanges;}
 #ifdef HAVE_UI_LOADER    
 signals:
     void    dialogNameChanged(QString dialogName);
@@ -223,6 +230,7 @@ private:
     BandDesignIntf* m_currentBand;
     PageItemDesignIntf* m_currentPage;
     TableOfContents* m_tableOfContents;
+    bool m_hasChanges;
 };
 
 class JSFunctionDesc{
@@ -294,6 +302,39 @@ private:
 class ComboBoxWrapperCreator: public IWrapperCreator{
 private:
     QObject* createWrapper(QObject* item);
+};
+
+class TableBuilder: public QObject{
+    Q_OBJECT
+public:
+    TableBuilder(LimeReport::HorizontalLayout* layout, DataSourceManager* dataManager);
+    ~TableBuilder(){delete m_patternLayout;}
+    Q_INVOKABLE QObject* addRow();
+    Q_INVOKABLE QObject* currentRow();
+    Q_INVOKABLE void fillInRowData(QObject* row);
+    Q_INVOKABLE void buildTable(const QString& datasourceName);
+private:
+    void checkBaseLayout();
+private:
+    LimeReport::HorizontalLayout* m_horizontalLayout;
+    LimeReport::HorizontalLayout* m_patternLayout;
+    LimeReport::VerticalLayout* m_baseLayout;
+    DataSourceManager* m_dataManager;
+};
+
+class DatasourceFunctions : public QObject{
+    Q_OBJECT
+public:
+    explicit DatasourceFunctions(IDataSourceManager* dataManager)
+        : m_dataManager(dataManager){}
+    Q_INVOKABLE bool first(const QString& datasourceName);
+    Q_INVOKABLE bool next(const QString& datasourceName);
+    Q_INVOKABLE bool prior(const QString& datasourceName);
+    Q_INVOKABLE bool isEOF(const QString& datasourceName);
+    Q_INVOKABLE bool invalidate(const QString& datasourceName);
+    Q_INVOKABLE QObject *createTableBuilder(BaseDesignIntf* horizontalLayout);
+private:
+    IDataSourceManager* m_dataManager;
 };
 
 class ScriptFunctionsManager : public QObject{
@@ -377,7 +418,7 @@ public:
     QVariant evaluateScript(const QString &script);
     void    addTableOfContentsItem(const QString& uniqKey, const QString& content, int indent);
     void    clearTableOfContents();
-
+    ScriptValueType moveQObjectToScript(QObject* object, const QString objectName);
 protected:
     void updateModel();
     bool containsFunction(const QString &functionName);

@@ -13,6 +13,9 @@
 #include "lrpreviewreportwidget_p.h"
 #include "serializators/lrxmlwriter.h"
 
+#include "lrexportersfactory.h"
+
+
 namespace LimeReport {
 
 bool PreviewReportWidgetPrivate::pageIsVisible(){
@@ -60,21 +63,28 @@ PageItemDesignIntf::Ptr PreviewReportWidgetPrivate::currentPage()
     else return PageItemDesignIntf::Ptr(0);
 }
 
+QList<QString> PreviewReportWidgetPrivate::aviableExporters()
+{
+    return ExportersFactory::instance().map().keys();
+}
+
 PreviewReportWidget::PreviewReportWidget(ReportEngine *report, QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::PreviewReportWidget), d_ptr(new PreviewReportWidgetPrivate(this))
+    ui(new Ui::PreviewReportWidget), d_ptr(new PreviewReportWidgetPrivate(this)),
+    m_scaleType(FitWidth), m_scalePercent(0)
 {
     ui->setupUi(this);
     d_ptr->m_report = report->d_ptr;
     d_ptr->m_previewPage = d_ptr->m_report->createPreviewPage();
     d_ptr->m_previewPage->setItemMode( LimeReport::PreviewMode );
-
+    m_resizeTimer.setSingleShot(true);
 
     ui->errorsView->setVisible(false);
     connect(ui->graphicsView->verticalScrollBar(),SIGNAL(valueChanged(int)), this, SLOT(slotSliderMoved(int)));
     connect(d_ptr->m_report, SIGNAL(destroyed(QObject*)), this, SLOT(reportEngineDestroyed(QObject*)));
     d_ptr->m_zoomer = new GraphicsViewZoomer(ui->graphicsView);
     connect(d_ptr->m_zoomer, SIGNAL(zoomed(double)), this, SLOT(slotZoomed(double)));
+    connect(&m_resizeTimer, SIGNAL(timeout()), this, SLOT(resizeDone()));
 }
 
 PreviewReportWidget::~PreviewReportWidget()
@@ -84,6 +94,31 @@ PreviewReportWidget::~PreviewReportWidget()
     delete d_ptr->m_zoomer;
     delete d_ptr;
     delete ui;
+}
+
+QList<QString> PreviewReportWidget::aviableExporters()
+{
+    return d_ptr->aviableExporters();
+}
+
+bool PreviewReportWidget::exportReport(QString exporterName, const QMap<QString, QVariant> &params)
+{
+    if (ExportersFactory::instance().map().contains(exporterName)){
+
+        ReportExporterInterface* e = ExportersFactory::instance().objectCreator(exporterName)(d_ptr->m_report);
+
+        QString filter = QString("%1 (*.%2)").arg(e->exporterName()).arg(e->exporterFileExt());
+        QString fileName = QFileDialog::getSaveFileName(this,tr("%1 file name").arg(e->exporterName()),"",filter);
+        if (!fileName.isEmpty()){
+            QFileInfo fi(fileName);
+            if (fi.suffix().isEmpty())
+                fileName += QString(".%1").arg(e->exporterFileExt());
+            bool result = e->exportPages(d_ptr->m_reportPages, fileName, params);
+            delete e;
+            return result;
+        }
+    }
+    return false;
 }
 
 void PreviewReportWidget::initPreview()
@@ -168,7 +203,11 @@ void PreviewReportWidget::print()
             printer.setPrinterName(pi.defaultPrinter().printerName());
 #endif
 #ifdef HAVE_QT5
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))
             printer.setPrinterName(pi.defaultPrinterName());
+#else
+            printer.setPrinterName(pi.defaultPrinter().printerName());
+#endif
 #endif
     QPrintDialog dialog(&printer,QApplication::activeWindow());
     if (dialog.exec()==QDialog::Accepted){
@@ -185,22 +224,11 @@ void PreviewReportWidget::print()
 
 void PreviewReportWidget::printToPDF()
 {
-    QString filter = "PDF (*.pdf)";
-    QString fileName = QFileDialog::getSaveFileName(this,tr("PDF file name"),"","PDF (*.pdf)");
-    if (!fileName.isEmpty()){
-        QFileInfo fi(fileName);
-        if (fi.suffix().isEmpty())
-            fileName+=".pdf";
-        QPrinter printer;
-        printer.setOutputFileName(fileName);
-        printer.setOutputFormat(QPrinter::PdfFormat);
-        if (!d_ptr->m_reportPages.isEmpty()){
-            ReportEnginePrivate::printReport(d_ptr->m_reportPages,printer);
-        }
+    if (!d_ptr->m_reportPages.isEmpty()){
+        exportReport("PDF");
         foreach(PageItemDesignIntf::Ptr pageItem, d_ptr->m_reportPages){
             d_ptr->m_previewPage->reactivatePageItem(pageItem);
         }
-        d_ptr->m_report->emitPrintedToPDF(fileName);
     }
 }
 
@@ -234,6 +262,12 @@ void PreviewReportWidget::setScalePercent(int percent)
     qreal scaleSize = percent/100.0;
     ui->graphicsView->scale(scaleSize, scaleSize);
     emit scalePercentChanged(percent);
+    if (percent == 100){
+        m_scaleType = OneToOne;
+    } else {
+        m_scaleType = Percents;
+        m_scalePercent = percent;
+    }
 }
 
 void PreviewReportWidget::fitWidth()
@@ -241,6 +275,7 @@ void PreviewReportWidget::fitWidth()
     if (d_ptr->currentPage()){
         qreal scalePercent = ui->graphicsView->viewport()->width() / ui->graphicsView->scene()->width();
         setScalePercent(scalePercent*100);
+        m_scaleType = FitWidth;
     }
 }
 
@@ -250,7 +285,13 @@ void PreviewReportWidget::fitPage()
         qreal vScale = ui->graphicsView->viewport()->width() / ui->graphicsView->scene()->width();
         qreal hScale = ui->graphicsView->viewport()->height() / d_ptr->currentPage()->height();
         setScalePercent(qMin(vScale,hScale)*100);
+        m_scaleType = FitPage;
     }
+}
+
+void PreviewReportWidget::resizeEvent(QResizeEvent *)
+{
+    m_resizeTimer.start(100);
 }
 
 void PreviewReportWidget::setErrorMessages(const QStringList &value)
@@ -263,6 +304,22 @@ void PreviewReportWidget::setErrorMessages(const QStringList &value)
 void PreviewReportWidget::emitPageSet()
 {
     emit pagesSet(d_ptr->m_reportPages.count());
+}
+
+ScaleType PreviewReportWidget::scaleType() const
+{
+    return m_scaleType;
+}
+
+int PreviewReportWidget::scalePercent() const
+{
+    return m_scalePercent;
+}
+
+void PreviewReportWidget::setScaleType(const ScaleType &scaleType, int percent)
+{
+    m_scaleType = scaleType;
+    m_scalePercent = percent;
 }
 
 void PreviewReportWidget::refreshPages()
@@ -318,6 +375,23 @@ void PreviewReportWidget::slotZoomed(double )
     emit scalePercentChanged(d_ptr->m_scalePercent);
 }
 
+void PreviewReportWidget::resizeDone()
+{
+    switch (m_scaleType) {
+    case FitPage:
+        fitPage();
+        break;
+    case FitWidth:
+        fitWidth();
+        break;
+    case OneToOne:
+        setScalePercent(100);
+        break;
+    case Percents:
+        setScalePercent(m_scalePercent);
+        break;
+    }
+}
 
 
 }

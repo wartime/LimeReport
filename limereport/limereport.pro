@@ -1,7 +1,7 @@
-contains(CONFIG,release) {
-	TARGET = limereport
+CONFIG(debug, debug|release){
+    TARGET = limereportd
 } else {
-	TARGET = limereportd
+    TARGET = limereport
 }
 
 TEMPLATE = lib
@@ -33,8 +33,8 @@ contains(CONFIG, staticlib){
 }
 
 EXTRA_FILES += \
-    $$PWD/lrglobal.cpp \
     $$PWD/lrglobal.h \
+    $$PWD/lrdatasourceintf.h \
     $$PWD/lrdatasourcemanagerintf.h \
     $$PWD/lrreportengine.h \
     $$PWD/lrscriptenginemanagerintf.h \
@@ -62,17 +62,25 @@ unix:{
 }
 
 win32 {
-    EXTRA_FILES ~= s,/,\\,g
-    BUILD_DIR ~= s,/,\\,g
     DESTDIR = $${DEST_LIBS}
-    DEST_DIR = $$DESTDIR/include
-    DEST_DIR ~= s,/,\\,g
-    DEST_INCLUDE_DIR ~= s,/,\\,g
+    contains(QMAKE_HOST.os, Linux){
+        QMAKE_POST_LINK += mkdir -p $$quote($${DEST_INCLUDE_DIR}) $$escape_expand(\\n\\t) # qmake need make mkdir -p on subdirs more than root/
+        for(FILE,EXTRA_FILES){
+            QMAKE_POST_LINK += $$QMAKE_COPY $$quote($$FILE) $$quote($${DEST_INCLUDE_DIR}) $$escape_expand(\\n\\t) # inside of libs make /include/files
+        }
+	QMAKE_POST_LINK += $$QMAKE_COPY_DIR $$quote($${DEST_INCLUDE_DIR}) $$quote($${DESTDIR})
+    } else {
+	EXTRA_FILES ~= s,/,\\,g
+	BUILD_DIR ~= s,/,\\,g
+	DEST_DIR = $$DESTDIR/include
+	DEST_DIR ~= s,/,\\,g
+	DEST_INCLUDE_DIR ~= s,/,\\,g
 
-    for(FILE,EXTRA_FILES){
-        QMAKE_POST_LINK += $$QMAKE_COPY \"$$FILE\" \"$${DEST_INCLUDE_DIR}\" $$escape_expand(\\n\\t)
+	for(FILE,EXTRA_FILES){
+    	    QMAKE_POST_LINK += $$QMAKE_COPY \"$$FILE\" \"$${DEST_INCLUDE_DIR}\" $$escape_expand(\\n\\t)
+	}
+	QMAKE_POST_LINK += $$QMAKE_COPY_DIR \"$${DEST_INCLUDE_DIR}\" \"$${DEST_DIR}\"
     }
-    QMAKE_POST_LINK += $$QMAKE_COPY_DIR \"$${DEST_INCLUDE_DIR}\" \"$${DEST_DIR}\"
 }
 
 contains(CONFIG,zint){
@@ -80,12 +88,25 @@ contains(CONFIG,zint){
     INCLUDEPATH += $$ZINT_PATH/backend $$ZINT_PATH/backend_qt
     DEPENDPATH += $$ZINT_PATH/backend $$ZINT_PATH/backend_qt
 	LIBS += -L$${DEST_LIBS}
-	contains(CONFIG,release) {
+        CONFIG(release, debug|release){
 		LIBS += -lQtZint
 	} else {
 		LIBS += -lQtZintd
 	}
 }
+
+#### Install mkspecs, headers and libs to QT_INSTALL_DIR
+
+headerFiles.path = $$[QT_INSTALL_HEADERS]/LimeReport/
+headerFiles.files = $${DEST_INCLUDE_DIR}/*
+INSTALLS += headerFiles
+
+mkspecs.path = $$[QT_INSTALL_DATA]/mkspecs/features
+mkspecs.files = limereport.prf
+INSTALLS += mkspecs
+
+target.path = $$[QT_INSTALL_LIBS]
+INSTALLS += target
 
 ####Automatically build required translation files (*.qm)
 
@@ -102,10 +123,10 @@ contains(CONFIG,build_translations){
     qtPrepareTool(LUPDATE, lupdate)
 
 greaterThan(QT_MAJOR_VERSION, 4) {
-    ts.commands = $$LUPDATE $$shell_quote($$PWD) -no-obsolete -ts $$TRANSLATIONS
+    ts.commands = $$LUPDATE $$shell_quote($$PWD) -noobsolete -ts $$TRANSLATIONS
 }
 lessThan(QT_MAJOR_VERSION, 5){
-    ts.commands = $$LUPDATE $$quote($$PWD) -no-obsolete -ts $$TRANSLATIONS
+    ts.commands = $$LUPDATE $$quote($$PWD) -noobsolete -ts $$TRANSLATIONS
 }
     TRANSLATIONS_FILES =
     qtPrepareTool(LRELEASE, lrelease)

@@ -164,8 +164,10 @@ QFont BaseDesignIntf::font() const
 
 void BaseDesignIntf::setFont(QFont &font)
 {
-    m_font = font;
-    update();
+    if (m_font != font){
+        m_font = font;
+        if (!isLoading()) update();
+    }
 }
 
 qreal BaseDesignIntf::width() const
@@ -225,6 +227,16 @@ qreal BaseDesignIntf::getItemPosX()
 qreal BaseDesignIntf::getItemPosY()
 {
     return y() / mmFactor();
+}
+
+qreal BaseDesignIntf::getAbsolutePosX()
+{
+    return calcAbsolutePosX(0,this);
+}
+
+qreal BaseDesignIntf::getAbsolutePosY()
+{
+    return calcAbsolutePosY(0,this);
 }
 
 QString BaseDesignIntf::setItemPosX(qreal xValue)
@@ -544,10 +556,12 @@ void BaseDesignIntf::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
 
         setItemPos(QPointF(div(m_startPos.x(), hStep).quot * hStep, div(m_startPos.y(), vStep).quot * vStep) - delta);
 
-        if (!isBand() && scene()->selectedItems().count()>1)
-            moveSelectedItems(tmpPos - pos());
-        if (scene()->selectedItems().count()==1 && (page()->magneticMovement()))
-            page()->itemMoved(this);
+        if (page()){
+            if (!isBand() && page()->selectedItems().count()>1)
+                moveSelectedItems(tmpPos - pos());
+            if (page()->selectedItems().count()==1 && (page()->magneticMovement()))
+                page()->itemMoved(this);
+        }
     }
 }
 
@@ -831,29 +845,29 @@ void BaseDesignIntf::setBorderLineSize(int value)
 
 void BaseDesignIntf::moveRight()
 {
-    if (!m_fixedPos) setItemPos(pos().x() + page()->horizontalGridStep(), pos().y());
+    if (!m_fixedPos && page()) setItemPos(pos().x() + page()->horizontalGridStep(), pos().y());
 }
 
 void BaseDesignIntf::moveLeft()
 {
-    if (!m_fixedPos) setItemPos(pos().x() - page()->horizontalGridStep(), pos().y());
+    if (!m_fixedPos && page()) setItemPos(pos().x() - page()->horizontalGridStep(), pos().y());
 }
 
 void BaseDesignIntf::moveDown()
 {
-    if (!m_fixedPos) setItemPos(pos().x(), pos().y() + page()->verticalGridStep());
+    if (!m_fixedPos && page()) setItemPos(pos().x(), pos().y() + page()->verticalGridStep());
 }
 
 void BaseDesignIntf::moveUp()
 {
-    if (!m_fixedPos) setItemPos(pos().x(), pos().y() - page()->verticalGridStep());
+    if (!m_fixedPos && page()) setItemPos(pos().x(), pos().y() - page()->verticalGridStep());
 }
 
 void BaseDesignIntf::sizeRight()
 {
     if ((m_possibleResizeDirectionFlags & ResizeLeft) ||
          (m_possibleResizeDirectionFlags & ResizeRight)) {
-        setWidth(width() + page()->horizontalGridStep());
+        if (page()) setWidth(width() + page()->horizontalGridStep());
     }
 }
 
@@ -861,7 +875,7 @@ void BaseDesignIntf::sizeLeft()
 {
     if ((m_possibleResizeDirectionFlags & ResizeLeft) ||
          (m_possibleResizeDirectionFlags & ResizeRight)) {
-        setWidth(width() - page()->horizontalGridStep());
+        if(page()) setWidth(width() - page()->horizontalGridStep());
     }
 }
 
@@ -869,7 +883,7 @@ void BaseDesignIntf::sizeUp()
 {
     if ((m_possibleResizeDirectionFlags & ResizeTop) ||
          (m_possibleResizeDirectionFlags & ResizeBottom)) {
-        setHeight(height() - page()->verticalGridStep());
+        if (page()) setHeight(height() - page()->verticalGridStep());
     }
 }
 
@@ -877,7 +891,7 @@ void BaseDesignIntf::sizeDown()
 {
     if ((m_possibleResizeDirectionFlags & ResizeTop) ||
          (m_possibleResizeDirectionFlags & ResizeBottom)) {
-        setHeight(height() + page()->verticalGridStep());
+        if (page()) setHeight(height() + page()->verticalGridStep());
     }
 }
 
@@ -989,7 +1003,9 @@ void BaseDesignIntf::setGeometryProperty(QRectF rect)
             setWidth(rect.width());
         if (rect.height() != geometry().height())
             setHeight(rect.height());
-        if (!isLoading()) notify("geometry",oldValue,rect);
+        if (!isLoading()) {
+            notify("geometry",oldValue,rect);
+        }
     }
 }
 
@@ -1047,6 +1063,7 @@ QVariant BaseDesignIntf::itemChange(QGraphicsItem::GraphicsItemChange change, co
     if (change == QGraphicsItem::ItemPositionHasChanged) {
         updateSelectionMarker();
     }
+
     if (change == QGraphicsItem::ItemSelectedChange) {
         turnOnSelectionMarker(value.toBool());
         emit itemSelectedHasBeenChanged(this, value.toBool());
@@ -1141,18 +1158,18 @@ void BaseDesignIntf::setItemPos(const QPointF &newPos)
     QPointF oldPos = pos();
     QPointF finalPos = modifyPosForAlignedItem(newPos);
     QGraphicsItem::setPos(finalPos);
-    emit posChanged(this, finalPos, oldPos);
+    emit posChanging(this, finalPos, oldPos);
 }
 
 void BaseDesignIntf::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    QGraphicsItem::mouseReleaseEvent(event);
     QRectF newGeometry = geometry();
     if (newGeometry != m_oldGeometry) {
         geometryChangedEvent(newGeometry, m_oldGeometry);
         updateSelectionMarker();
-        emit(geometryChanged(this, newGeometry, m_oldGeometry));
+        emit(posChanged(this, newGeometry.topLeft(), m_oldGeometry.topLeft()));
     }
+    QGraphicsItem::mouseReleaseEvent(event);
 }
 
 QWidget* findRootWidget(QWidget* widget){
@@ -1166,13 +1183,6 @@ void BaseDesignIntf::showEditorDialog(){
     QWidget *editor = defaultEditor(); 
     if (editor) {
         editor->setStyleSheet(findRootWidget(scene()->views().at(0))->styleSheet());
-
-#ifdef Q_OS_WIN
-        editor->setAttribute(Qt::WA_DeleteOnClose);
-        editor->setWindowFlags(Qt::Dialog);
-        editor->setWindowModality(Qt::ApplicationModal);
-        editor->show();
-#else
         QDialog* dialog = new QDialog(QApplication::activeWindow());
         dialog->setAttribute(Qt::WA_DeleteOnClose);
 #ifdef Q_OS_MAC
@@ -1187,7 +1197,6 @@ void BaseDesignIntf::showEditorDialog(){
         connect(editor,SIGNAL(destroyed()),dialog,SLOT(close()));
         dialog->setWindowTitle(editor->windowTitle());
         dialog->exec();
-#endif
     }
 }
 
@@ -1209,12 +1218,12 @@ void BaseDesignIntf::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         page->clearSelection();
         this->setSelected(true);
     }
-    QMenu menu;
-    QAction* copyAction = menu.addAction(QIcon(":/report/images/copy.png"), tr("Copy"));
+    QMenu menu(event->widget());
+    QAction* copyAction = menu.addAction(QIcon(":/report/images/copy"), tr("Copy"));
     copyAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
     QAction* cutAction = menu.addAction(QIcon(":/report/images/cut"), tr("Cut"));
     cutAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_X));
-    QAction* pasteAction = menu.addAction(QIcon(":/report/images/paste.png"), tr("Paste"));
+    QAction* pasteAction = menu.addAction(QIcon(":/report/images/paste"), tr("Paste"));
     pasteAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_V));
     pasteAction->setEnabled(false);
 
@@ -1224,15 +1233,19 @@ void BaseDesignIntf::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         pasteAction->setEnabled(true);
     }
     menu.addSeparator();
-    QAction* brinToTopAction = menu.addAction(QIcon(":/report//images/bringToTop"), tr("Bring to top"));
-    QAction* sendToBackAction = menu.addAction(QIcon(":/report//images/sendToBack"), tr("Send to back"));
+    QAction* bringToTopAction = menu.addAction(QIcon(":/report/images/bringToTop"), tr("Bring to top"));
+    QAction* sendToBackAction = menu.addAction(QIcon(":/report/images/sendToBack"), tr("Send to back"));
     QAction* createHLayout = 0;
     if( page->selectedItems().count()>1){
         createHLayout =  menu.addAction(QIcon(":/report/images/hlayout"), tr("Create Horizontal Layout"));
     }
+    QAction* createVLayout = 0;
+    if( page->selectedItems().count()>1){
+        createVLayout =  menu.addAction(QIcon(":/report/images/vlayout"), tr("Create Vertical Layout"));
+    }
     menu.addSeparator();
-    QAction* noBordersAction = menu.addAction(QIcon(":/report//images/noLines"), tr("No borders"));
-    QAction* allBordersAction = menu.addAction(QIcon(":/report//images/allLines"), tr("All borders"));
+    QAction* noBordersAction = menu.addAction(QIcon(":/report/images/noLines"), tr("No borders"));
+    QAction* allBordersAction = menu.addAction(QIcon(":/report/images/allLines"), tr("All borders"));
     preparePopUpMenu(menu);
     QAction* a = menu.exec(event->screenPos());
     if (a){
@@ -1245,7 +1258,7 @@ void BaseDesignIntf::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
             page->copy();
         if (a == pasteAction)
             page->paste();
-        if (a == brinToTopAction)
+        if (a == bringToTopAction)
             page->bringToFront();
         if (a == sendToBackAction)
             page->sendToBack();
@@ -1255,6 +1268,8 @@ void BaseDesignIntf::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
             page->setBorders(BaseDesignIntf::AllLines);
         if (a == createHLayout)
             page->addHLayout();
+        if (a == createVLayout)
+            page->addVLayout();
         processPopUpAction(a);
     }
 }
@@ -1352,7 +1367,7 @@ QObject *BaseDesignIntf::createElement(const QString& /*collectionName*/, const 
             obj = LimeReport::DesignElementsFactory::instance().objectCreator(elementType)(this, this);
             connect(obj,SIGNAL(propertyChanged(QString,QVariant,QVariant)),page(),SLOT(slotItemPropertyChanged(QString,QVariant,QVariant)));
         }
-    } catch (ReportError error){
+    } catch (ReportError &error){
         qDebug()<<error.what();
     }
     return obj;
@@ -1378,7 +1393,7 @@ void BaseDesignIntf::collectionLoadFinished(const QString &collectionName)
             foreach(QObject * obj, QObject::children()) {
 #endif
                 BaseDesignIntf *item = dynamic_cast<BaseDesignIntf *>(obj);
-                if (item) {
+                if (item && page()) {
                     page()->registerItem(item);
                 }
             }
@@ -1477,6 +1492,24 @@ void BaseDesignIntf::addChildItems(QList<BaseDesignIntf*>* list){
         list->append(item);
         item->addChildItems(list);
     }
+}
+
+qreal BaseDesignIntf::calcAbsolutePosY(qreal currentOffset, BaseDesignIntf *item)
+{
+    BaseDesignIntf* parent = dynamic_cast<BaseDesignIntf*>(item->parent());
+    if (parent)
+        return calcAbsolutePosY(currentOffset + item->getItemPosY(), parent);
+    else
+        return currentOffset + item->getItemPosY();
+}
+
+qreal BaseDesignIntf::calcAbsolutePosX(qreal currentOffset, BaseDesignIntf *item)
+{
+    BaseDesignIntf* parent = dynamic_cast<BaseDesignIntf*>(item->parent());
+    if (parent)
+        return calcAbsolutePosX(currentOffset + item->getItemPosX(), parent);
+    else
+        return currentOffset + item->getItemPosX();
 }
 
 QList<BaseDesignIntf*> BaseDesignIntf::allChildBaseItems()
@@ -1604,6 +1637,20 @@ BaseDesignIntf *Marker::object() const
 
 QMap<QString, QString> BaseDesignIntf::getStringForTranslation(){
     return QMap<QString,QString>();
+}
+
+QVariant BookmarkContainerDesignIntf::getBookMark(const QString& key)
+{
+    if (m_bookmarks.contains(key))
+        return m_bookmarks.value(key);
+    else return QVariant();
+}
+
+void BookmarkContainerDesignIntf::copyBookmarks(BookmarkContainerDesignIntf* source)
+{
+    foreach(QString key, source->bookmarks()){
+        addBookmark(key,source->getBookMark(key));
+    }
 }
 
 } //namespace LimeReport

@@ -84,7 +84,8 @@ public:
         Translations,
         TabTypeCount
     };
-    ReportDesignWidget(ReportEnginePrivateInterface* report, QMainWindow *mainWindow, QWidget *parent = 0);
+    ReportDesignWidget(ReportEnginePrivateInterface* report, QSettings* settings,
+                       QMainWindow *mainWindow, QWidget *parent = 0);
     ~ReportDesignWidget();
     void createStartPage();
     void clear();
@@ -108,9 +109,11 @@ public:
     ReportEnginePrivateInterface* report(){return m_report;}
     QString reportFileName();
     bool isNeedToSave();
+    bool emitSaveReport();
+    bool emitSaveReportAs();
     bool emitLoadReport();
-    void saveState(QSettings *settings);
-    void loadState(QSettings *settings);
+    void saveState();
+    void loadState();
     void applySettings();
     void applyUseGrid();
     bool useGrid(){ return m_useGrid;}
@@ -136,7 +139,7 @@ public slots:
     void copy();
     void paste();
     void cut();
-    void brinToFront();
+    void bringToFront();
     void sendToBack();
     void alignToLeft();
     void alignToRight();
@@ -148,6 +151,7 @@ public slots:
     void sameWidth();
     void editLayoutMode(bool value);
     void addHLayout();
+    void addVLayout();
     void setFont(const QFont &font);
     void setTextAlign(const bool &horizontalAlign, const Qt::AlignmentFlag &alignment);
     void setBorders(const BaseDesignIntf::BorderLines& borders);
@@ -169,6 +173,7 @@ private slots:
     void slotSceneRectChanged(QRectF);
     void slotCurrentTabChanged(int index);
     void slotReportLoaded();
+    void slotScriptTextChanged();
 #ifdef HAVE_QTDESIGNER_INTEGRATION
     void slotDialogChanged(QString);
     void slotDialogNameChanged(QString oldName, QString newName);
@@ -184,7 +189,7 @@ signals:
     void multiItemSelected();
     void commandHistoryChanged();
     void cleared();
-    void loaded();
+    void loadFinished();
     void activePageChanged();
     void activePageUpdated(LimeReport::PageDesignIntf*);
     void bandAdded(LimeReport::PageDesignIntf*, LimeReport::BandDesignIntf*);
@@ -224,6 +229,7 @@ private:
     bool m_useMagnet;
     bool m_dialogChanged;
     bool m_useDarkTheme;
+    QSettings* m_settings;
 };
 
 } // namespace LimeReport

@@ -268,7 +268,7 @@ public:
     QColor borderColor() const;
     void setBorderColor(const QColor &borderColor);
     void setItemVisible(const bool& value);
-    virtual bool canContainChildren(){ return false;}
+    virtual bool canContainChildren() const { return false;}
     ReportSettings* reportSettings() const;
     void setReportSettings(ReportSettings *reportSettings);
     void setZValueProperty(qreal value);
@@ -288,6 +288,8 @@ public:
     Q_INVOKABLE qreal getItemHeight();
     Q_INVOKABLE qreal getItemPosX();
     Q_INVOKABLE qreal getItemPosY();
+    Q_INVOKABLE qreal getAbsolutePosX();
+    Q_INVOKABLE qreal getAbsolutePosY();
     Q_INVOKABLE QString setItemPosX(qreal xValue);
     Q_INVOKABLE QString setItemPosY(qreal yValue);
 
@@ -352,6 +354,8 @@ protected:
     virtual void processPopUpAction(QAction* action){Q_UNUSED(action)}
 
     void addChildItems(QList<BaseDesignIntf*>* list);
+    qreal calcAbsolutePosY(qreal currentOffset, BaseDesignIntf* item);
+    qreal calcAbsolutePosX(qreal currentOffset, BaseDesignIntf* item);
 
 private:
     void updateSelectionMarker();
@@ -410,10 +414,11 @@ private:
     QString m_patternName;
     BaseDesignIntf* m_patternItem;
     bool    m_fillInSecondPass;
-    bool m_watermark;
-    
+    bool    m_watermark;
+
 signals:
     void geometryChanged(QObject* object, QRectF newGeometry, QRectF oldGeometry);
+    void posChanging(QObject* object, QPointF newPos, QPointF oldPos);
     void posChanged(QObject* object, QPointF newPos, QPointF oldPos);
     void itemSelected(LimeReport::BaseDesignIntf *item);
     void itemSelectedHasBeenChanged(BaseDesignIntf *item, bool value);
@@ -425,10 +430,22 @@ signals:
     void propertyesChanged(QVector<QString> propertyNames);
     void itemAlignChanged(BaseDesignIntf* item, const ItemAlign& oldValue, const ItemAlign& newValue);
     void itemVisibleHasChanged(BaseDesignIntf* item);
-
     void beforeRender();
     void afterData();
     void afterRender();
+};
+
+class BookmarkContainerDesignIntf: public BaseDesignIntf{
+    Q_OBJECT
+public:
+    BookmarkContainerDesignIntf(const QString& storageTypeName, QObject* owner = 0, QGraphicsItem* parent = 0)
+        :BaseDesignIntf(storageTypeName, owner, parent){}
+    void addBookmark(const QString& key, const QVariant& value){ m_bookmarks.insert(key, value);}
+    QList<QString> bookmarks(){ return m_bookmarks.keys();}
+    QVariant getBookMark(const QString& key);
+    void copyBookmarks(BookmarkContainerDesignIntf* source);
+private:
+    QMap<QString,QVariant>  m_bookmarks;
 };
 
 } //namespace LimeReport
