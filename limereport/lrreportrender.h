@@ -157,6 +157,7 @@ private:
     void    checkFooterGroup(BandDesignIntf* groupBand);
     void    pasteGroups();
     void    checkLostHeadersOnPrevPage();
+    void    checkLostHeadersInPrevColumn();
 
     BandDesignIntf* findEnclosingGroup();
     bool    registerBand(BandDesignIntf* band, bool registerInChildren=true);
@@ -214,6 +215,7 @@ private:
     QVector<BandDesignIntf*> m_columnedBandItems;
     unsigned long long m_currentNameIndex;
     bool            m_newPageStarted;
+    bool            m_lostHeadersMoved;
 
 };
 } // namespace LimeReport

@@ -40,6 +40,8 @@ class BarcodeItem : public LimeReport::ContentItemDesignIntf {
     Q_ENUMS(InputMode)
     Q_PROPERTY(QString content READ content WRITE setContent)
     Q_PROPERTY(BarcodeType barcodeType READ barcodeType WRITE setBarcodeType )
+    Q_PROPERTY(QString datasource READ datasource WRITE setDatasource)
+    Q_PROPERTY(QString field READ field WRITE setField)
     Q_PROPERTY(QString testValue READ designTestValue WRITE setDesignTestValue)
     Q_PROPERTY(QColor foregroundColor READ foregroundColor WRITE setForegroundColor)
     Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor)
@@ -50,12 +52,9 @@ class BarcodeItem : public LimeReport::ContentItemDesignIntf {
     Q_PROPERTY(int pdf417CodeWords READ pdf417CodeWords WRITE setPdf417CodeWords)
     Q_PROPERTY(InputMode inputMode READ inputMode WRITE setInputMode)
     Q_PROPERTY(bool hideText READ hideText WRITE setHideText)
+    Q_PROPERTY(int option3 READ option3 WRITE setOption3)
+    Q_PROPERTY(bool hideIfEmpty READ hideIfEmpty WRITE setHideIfEmpty)
 public:
-//    enum BarcodeType {QRCODE=58,CODE128=20,DATAMATRIX=71,MAXICODE=57,MICROPDF417=84};
-//    enum BarcodeType {CODE_11=1,C25MATRIX=2,QRCODE=58,CODE128=20,DATAMATRIX=71,MAXICODE=57,MICROPDF417=84,
-//                      EAN=13,PDF417=55, TELEPEN_NUM=87,ITF14=89, KIX=90, MICROQR=97,
-//                      EAN14=72,CHANNEL=140,CODEONE=141,GRIDMATRIX=142};
-
     enum BarcodeType {
         CODE11          =1,
         C25MATRIX       =2,
@@ -163,6 +162,10 @@ public:
     QString content() const {return m_content;}
     void setBarcodeType(BarcodeType value);
     BarcodeType barcodeType(){return m_barcodeType;}
+    QString datasource() const;
+    void setDatasource(const QString &datasource);
+    QString field() const;
+    void setField(const QString &field);
     void setDesignTestValue(QString value);
     QString designTestValue(){return m_designTestValue;}
     QColor foregroundColor(){return m_foregroundColor;}
@@ -186,8 +189,17 @@ public:
     bool hideText() const;
     void setHideText(bool hideText);
 
+    int option3() const;
+    void setOption3(int option3);
+
+    bool hideIfEmpty() const;
+    void setHideIfEmpty(bool hideIfEmpty);
+    bool isEmpty() const;
+
 private:
     QString m_content;
+    QString m_datasource;
+    QString m_field;
     QString m_designTestValue;
     BarcodeType m_barcodeType;
     QColor m_foregroundColor;
@@ -199,6 +211,8 @@ private:
     int m_pdf417CodeWords;
     InputMode m_inputMode;
     bool m_hideText;
+    int m_option3;
+    bool m_hideIfEmpty;
 };
 
 }

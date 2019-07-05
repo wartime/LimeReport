@@ -42,13 +42,6 @@
 #  define LIMEREPORT_EXPORT   /**/
 #endif
 
-#ifdef USE_QJSENGINE
-//#include <QJSEngine>
-#include <QQmlEngine>
-#else
-#include <QtScript/QScriptEngine>
-#endif
-
 namespace LimeReport {
 
 #ifdef __GNUC__
@@ -59,8 +52,8 @@ namespace LimeReport {
 
 
 namespace Const{
-    int const RESIZE_HANDLE_SIZE = 10;
-    int const SELECTION_PEN_SIZE = 4;
+    int const RESIZE_HANDLE_SIZE = 5;
+    int const SELECTION_PEN_SIZE = 1;
     int const MINIMUM_ITEM_WIDTH = 2*RESIZE_HANDLE_SIZE;
     int const MINIMUM_ITEM_HEIGHT = 2*RESIZE_HANDLE_SIZE;
     double const RESIZE_ZONE_OPACITY = 0.5;
@@ -97,7 +90,7 @@ namespace Const{
     const QString DATAFUNCTIONS_MANAGER_NAME = "DatasourceFunctions";
     const QString EOW("~!@#$%^&*()+{}|:\"<>?,/;'[]\\-=");
     const int DEFAULT_TAB_INDENTION = 4;
-
+    const int DOCKWIDGET_MARGINS = 4;
 }
     QString extractClassName(QString className);
     QString escapeSimbols(const QString& value);
@@ -146,25 +139,10 @@ namespace Const{
         virtual ~IPainterProxy();
     };
 
-#ifdef HAVE_QT4
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
     typedef QStyleOptionViewItemV4 StyleOptionViewItem;
 #else
     typedef QStyleOptionViewItem StyleOptionViewItem;
-#endif
-
-#ifdef USE_QJSENGINE
-    typedef QJSEngine ScriptEngineType;
-    typedef QJSValue ScriptValueType;
-    template <typename T>
-    static inline QJSValue getJSValue(QJSEngine &e, T *p)
-    {
-        QJSValue res = e.newQObject(p);
-        QQmlEngine::setObjectOwnership(p, QQmlEngine::CppOwnership);
-        return res;
-    }
-#else
-    typedef QScriptEngine ScriptEngineType;
-    typedef QScriptValue ScriptValueType;
 #endif
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)

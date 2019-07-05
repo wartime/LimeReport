@@ -14,11 +14,10 @@ public:
     ~DesignerSettingManager();
     void setApplicationInstance(QApplication* application);
 public slots:
-    void getAviableLanguages(QList<QLocale::Language>* languages);
+    void getAvailableLanguages(QList<QLocale::Language>* languages);
     QLocale::Language getCurrentDefaultLanguage();
-    void currentDefaulLanguageChanged(QLocale::Language language);
+    void currentDefaultLanguageChanged(QLocale::Language language);
 private:
-    QApplication* m_app;
     QSettings* m_setting;
 };
 

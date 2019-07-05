@@ -57,7 +57,7 @@ ReportDesignWidget::ReportDesignWidget(ReportEnginePrivateInterface* report, QSe
     m_dialogDesignerManager(new DialogDesignerManager(this)),
 #endif
     m_mainWindow(mainWindow), m_verticalGridStep(10), m_horizontalGridStep(10), m_useGrid(false),
-    m_dialogChanged(false), m_useDarkTheme(false), m_settings(settings)
+    m_dialogChanged(false), m_theme("Default"), m_settings(settings), m_defaultUnits(BaseDesignIntf::Millimeters)
 {
 #ifdef HAVE_QT4
     m_tabWidget = new LimeReportTabWidget(this);
@@ -74,10 +74,19 @@ ReportDesignWidget::ReportDesignWidget(ReportEnginePrivateInterface* report, QSe
     setLayout(mainLayout);
 
     m_report=report;
-    if (!m_report->pageCount()) m_report->appendPage("page1");
+
+    m_settings->beginGroup("DesignerWidget");
+    QVariant v = m_settings->value("DefaultUnits");
+    if (v.isValid()){
+        m_defaultUnits = static_cast<BaseDesignIntf::UnitType>(v.toInt());
+    }
+    m_settings->endGroup();
+
+    if (!m_report->pageCount()){
+        createStartPage();
+    }
 
     createTabs();
-
     connect(dynamic_cast<QObject*>(m_report), SIGNAL(pagesLoadFinished()),this,SLOT(slotPagesLoadFinished()));
     connect(dynamic_cast<QObject*>(m_report), SIGNAL(cleared()), this, SIGNAL(cleared()));
     connect(dynamic_cast<QObject*>(m_report), SIGNAL(loadFinished()), this, SLOT(slotReportLoaded()));
@@ -100,6 +109,12 @@ ReportDesignWidget::ReportDesignWidget(ReportEnginePrivateInterface* report, QSe
     connect(m_dialogDesignerManager, SIGNAL(dialogNameChanged(QString,QString)),
             this, SLOT(slotDialogNameChanged(QString,QString)));
 #endif
+
+    m_themes.insert("Default","");
+    m_localToEng.insert(QObject::tr("Dark"), "Dark");
+    m_localToEng.insert(QObject::tr("Light"), "Light");
+    initThemeIfExist("Dark", ":/qdarkstyle/style.qss");
+    initThemeIfExist("Light", ":/qlightstyle/lightstyle.qss");
 }
 
 #ifdef HAVE_QTDESIGNER_INTEGRATION
@@ -131,8 +146,6 @@ QWidget *ReportDesignWidget::toolWindow(ReportDesignWidget::ToolWindowType windo
         return dialogDesignerManager()->resourcesEditor();
     case SignalSlotEditor:
         return dialogDesignerManager()->signalSlotEditor();
-    default:
-        return 0;
     }
 }
 
@@ -185,8 +198,9 @@ void ReportDesignWidget::saveState()
     m_settings->setValue("vGridStep",m_verticalGridStep);
     m_settings->setValue("defaultFont",m_defaultFont);
     m_settings->setValue("useGrid",m_useGrid);
-    m_settings->setValue("useDarkTheme",m_useDarkTheme);
+    m_settings->setValue("theme",m_theme);
     m_settings->setValue("ScriptEditorState", m_scriptEditor->saveState());
+    m_settings->setValue("DefaultUnits", m_defaultUnits);
     m_settings->endGroup();
 }
 
@@ -196,16 +210,26 @@ void ReportDesignWidget::applySettings()
         m_report->pageAt(i)->pageItem()->setFont(m_defaultFont);
     }
     applyUseGrid();
-    if (m_useDarkTheme) {
-        QFile theme(":/qdarkstyle/style.qss");
-        theme.open(QIODevice::ReadOnly);
-        QString styleSheet = theme.readAll();
-        parentWidget()->setStyleSheet(styleSheet);
-        m_report->setStyleSheet(styleSheet);
+
+    if (m_themes.contains(m_theme)){
+        parentWidget()->setStyleSheet(m_themes.value(m_theme));
+        m_report->setStyleSheet(m_themes.value(m_theme));
     } else {
+        m_theme = "Default";
         parentWidget()->setStyleSheet("");
         m_report->setStyleSheet("");
     }
+
+//    if (m_theme.compare("Dark") == 0) {
+//        QFile theme(":/qdarkstyle/style.qss");
+//        theme.open(QIODevice::ReadOnly);
+//        QString styleSheet = theme.readAll();
+//        parentWidget()->setStyleSheet(styleSheet);
+//        m_report->setStyleSheet(styleSheet);
+//    } else {
+//        parentWidget()->setStyleSheet("");
+//        m_report->setStyleSheet("");
+//    }
 
     if (m_settings){
         m_settings->beginGroup("ScriptEditor");
@@ -244,14 +268,19 @@ void ReportDesignWidget::loadState()
         m_useGrid = v.toBool();
     }
 
-    v = m_settings->value("useDarkTheme");
+    v = m_settings->value("theme");
     if (v.isValid()){
-        m_useDarkTheme = v.toBool();
+        m_theme = v.toString();
     }
 
     v = m_settings->value("ScriptEditorState");
-    if (v.isValid()){
+    if (v.isValid() && m_scriptEditor){
         m_scriptEditor->restoreState(v.toByteArray());
+    }
+
+    v = m_settings->value("DefaultUnits");
+    if (v.isValid()){
+        m_defaultUnits = static_cast<BaseDesignIntf::UnitType>(v.toInt());
     }
 
     m_settings->endGroup();
@@ -262,15 +291,12 @@ void ReportDesignWidget::loadState()
 void ReportDesignWidget::createTabs(){
     m_tabWidget->clear();
     int pageIndex  = -1;
-    for (int i = 0; i<m_report->pageCount();++i){
-        QGraphicsView* view = new QGraphicsView(qobject_cast<QWidget*>(this));
+    for (int i = 0; i < m_report->pageCount(); ++i){
+        PageView* view = new PageView(qobject_cast<QWidget*>(this));
         view->setBackgroundBrush(QBrush(Qt::gray));
         view->setFrameShape(QFrame::NoFrame);
         view->setScene(m_report->pageAt(i));
-
-//        foreach(QGraphicsItem* item, m_report->pageAt(i)->selectedItems()){
-//            item->setSelected(false);
-//        }
+        view->setPageItem(m_report->pageAt(i)->pageItem());
 
         m_report->pageAt(i)->clearSelection();
 
@@ -284,13 +310,6 @@ void ReportDesignWidget::createTabs(){
     }
 
     m_scriptEditor = new ScriptEditor(this);
-
-//    m_settings->beginGroup("DesignerWidget");
-//    QVariant v = m_settings->value("ScriptEditorState");
-//    if (v.isValid()){
-//        m_scriptEditor->restoreState(v.toByteArray());
-//    }
-//    m_settings->endGroup();
 
     connect(m_scriptEditor, SIGNAL(textChanged()), this, SLOT(slotScriptTextChanged()));
     m_scriptEditor->setReportEngine(m_report);
@@ -362,10 +381,12 @@ void ReportDesignWidget::connectPage(PageDesignIntf *page)
     emit activePageChanged();
 }
 
-void ReportDesignWidget::createStartPage()
+PageDesignIntf* ReportDesignWidget::createStartPage()
 {
-    m_report->appendPage("page1");
-    createTabs();
+    PageDesignIntf* page = m_report->appendPage("page1");
+    page->pageItem()->setUnitType(m_defaultUnits);
+//    createTabs();
+    return page;
 }
 
 void ReportDesignWidget::removeDatasource(const QString &datasourceName)
@@ -684,6 +705,16 @@ void ReportDesignWidget::prepareReport()
     report()->clearSelection();
 }
 
+void ReportDesignWidget::initThemeIfExist(const QString &themeName, const QString &path)
+{
+    QFile theme(path);
+    if (theme.exists()){
+        theme.open(QIODevice::ReadOnly);
+        QString styleSheet = theme.readAll();
+        m_themes.insert(themeName, styleSheet);
+    }
+}
+
 void ReportDesignWidget::previewReport()
 {
     prepareReport();
@@ -749,14 +780,37 @@ void ReportDesignWidget::editSetting()
     setting.setHorizontalGridStep(m_horizontalGridStep);
     setting.setDefaultFont(m_defaultFont);
     setting.setSuppressAbsentFieldsAndVarsWarnings(m_report->suppressFieldAndVarError());
-    setting.setUseDarkTheme(m_useDarkTheme);
+
+    QStringList themes;
+    themes.append(QObject::tr("Default"));
+    foreach(QString theme, m_themes.keys())
+        if (!themes.contains(QObject::tr(theme.toLatin1())))
+            themes.append(QObject::tr(theme.toLatin1()));
+
+    setting.setDesignerThemes(themes, QObject::tr(m_theme.toLatin1()));
     setting.setDesignerLanguages(m_report->designerLanguages(), m_report->currentDesignerLanguage());
+
+    QList<QString> unitTypes;
+    unitTypes << QObject::tr("Millimeters") << QObject::tr("Inches");
+    setting.setDesignerUnites(unitTypes,
+                              m_defaultUnits == BaseDesignIntf::Millimeters ?
+                                  QObject::tr("Millimeters")  :
+                                  QObject::tr("Inches"));
 
     if (setting.exec()){
         m_horizontalGridStep = setting.horizontalGridStep();
         m_verticalGridStep = setting.verticalGridStep();
         m_defaultFont = setting.defaultFont();
-        m_useDarkTheme = setting.userDarkTheme();
+        if (setting.reportUnits().compare(QObject::tr("Millimeters")) == 0)
+            m_defaultUnits = BaseDesignIntf::Millimeters;
+        else {
+            m_defaultUnits = BaseDesignIntf::Inches;
+        }
+        if (m_localToEng.contains(setting.theme())){
+            m_theme =  m_localToEng.value(setting.theme());
+        } else {
+            m_theme = "Default";
+        }
         m_report->setSuppressFieldAndVarError(setting.suppressAbsentFieldsAndVarsWarnings());
         if (m_report->currentDesignerLanguage() != setting.designerLanguage() ){
             m_report->setCurrentDesignerLanguage(setting.designerLanguage());
@@ -840,6 +894,24 @@ void ReportDesignWidget::slotDialogDeleted(QString dialogName)
             break;
         }
     }
+}
+
+void ReportDesignWidget::lockSelectedItems()
+{
+    if (activePage())
+        activePage()->lockSelectedItems();
+}
+
+void ReportDesignWidget::unlockSelectedItems()
+{
+    if (activePage())
+        activePage()->unlockSelectedItems();
+}
+
+void ReportDesignWidget::selectOneLevelItems()
+{
+    if (activePage())
+        activePage()->selectOneLevelItems();
 }
 
 void ReportDesignWidget::slotDatasourceCollectionLoaded(const QString & /*collectionName*/)
@@ -979,6 +1051,179 @@ void ReportDesignWidget::clear()
     m_report->setReportFileName("");
     m_report->scriptContext()->setInitScript("");
     m_scriptEditor->setPlainText("");
+}
+
+void PageView::setPageItem(PageItemDesignIntf *pageItem)
+{
+    if (!pageItem) return;
+    m_pageItem = pageItem;
+    if (!m_horizontalRuller){
+        m_horizontalRuller = new Ruler(Ruler::Horizontal, this);
+        m_horizontalRuller->setPage(pageItem);
+    }
+    if (!m_verticalRuller){
+        m_verticalRuller = new Ruler(Ruler::Vertical, this);
+        m_verticalRuller->setPage(pageItem);
+    }
+}
+
+bool PageView::viewportEvent(QEvent *event)
+{
+    switch (event->type()) {
+    case QEvent::MouseMove:
+        m_horizontalRuller->setMousePos(dynamic_cast<QMouseEvent*>(event)->pos());
+        m_verticalRuller->setMousePos(dynamic_cast<QMouseEvent*>(event)->pos());
+        m_horizontalRuller->update();
+        m_verticalRuller->update();
+        break;
+    //case QEvent::Resize:
+    case QEvent::Paint:
+        if (m_horizontalRuller){
+            int x = mapFromScene(m_pageItem->boundingRect().x(),m_pageItem->boundingRect().y()).x();
+            int y = mapFromScene(m_pageItem->boundingRect().x(),m_pageItem->boundingRect().y()).y();
+            int width = mapFromScene(m_pageItem->boundingRect().bottomRight().x(),m_pageItem->boundingRect().bottomRight().y()).x();
+            int height = mapFromScene(m_pageItem->boundingRect().bottomRight().x(),m_pageItem->boundingRect().bottomRight().y()).y();
+
+            x = x < 0 ? 0 : x;
+            y = y < 0 ? 0 : y;
+
+            m_horizontalRuller->setGeometry(x+20, 0, (width-x), 20);
+            m_verticalRuller->setGeometry(0, y+20, 20, (height - y));
+            m_verticalRuller->update();
+            m_horizontalRuller->update();
+        }
+        break;
+    default:
+        break;
+    }
+
+    return QGraphicsView::viewportEvent(event);
+}
+
+void Ruler::setPage(PageItemDesignIntf *page)
+{
+    m_page = page;
+
+}
+
+void Ruler::paintEvent(QPaintEvent *event){
+    QPainter painter(this);
+    painter.setBrush(palette().background());
+    painter.setPen(Qt::NoPen);
+    painter.drawRect(event->rect());
+//    painter.setPen(palette().foreground().color());
+
+    if (m_page){
+        qreal rulerWidth = m_page->geometry().width() / m_page->unitFactor();
+        qreal rulerHeight = m_page->geometry().height() / m_page->unitFactor();
+
+        QGraphicsView* view = qobject_cast<QGraphicsView*>(parent());
+
+        int hStartPos = view->mapFromScene(0,0).x();
+        int vStartPos = view->mapFromScene(0,0).y();
+
+        QFont font = painter.font();
+        font.setPointSize(7);
+        painter.setFont(font);
+
+        switch (m_type) {
+        case Horizontal:
+            painter.setPen(Qt::NoPen);
+
+            if (isColorDark(palette().background().color()))
+                painter.setBrush(QColor("#64893d"));
+            else
+                painter.setBrush(QColor("#b5da91"));
+
+            drawItemWithChildren(&painter, m_page);
+            painter.setPen(palette().foreground().color());
+
+            for (int i = 0; i < rulerWidth / 10; ++i){
+                int hs10 = view->mapFromScene(QPointF(m_page->geometry().topLeft().x() + i * 10 * m_page->unitFactor(), 0)).x();
+                int hs5 = view->mapFromScene(QPointF(m_page->geometry().topLeft().x() + i * 10 * m_page->unitFactor() + 5 * m_page->unitFactor(), 0)).x();
+                if (hs10 > 0){
+                    if (hStartPos > 0){
+                        hs10 -= hStartPos;
+                        hs5  -= hStartPos;
+                    }
+                    painter.drawLine(hs10, 15, hs10, 20);
+                    painter.drawLine(hs5, 10, hs5, 20);
+                    if ( i > 0)
+                        painter.drawText(QPoint(hs10 - (painter.fontMetrics().width(QString::number(i))/2), 12),
+                                         QString::number(i));
+                }
+            }
+            painter.setPen(palette().foreground().color());
+            painter.drawLine(m_mousePos.x() - (hStartPos > 0 ? hStartPos : 0) , 0,
+                             m_mousePos.x() - (hStartPos > 0 ? hStartPos : 0) , 20);
+            break;
+        case Vertical:
+            painter.setPen(Qt::NoPen);
+
+            if (isColorDark(palette().background().color()))
+                painter.setBrush(QColor("#64893d"));
+            else
+                painter.setBrush(QColor("#b5da91"));
+
+            drawItemWithChildren(&painter, m_page);
+            painter.setPen(palette().foreground().color());
+            for (int i = 0; i < rulerHeight / 10; ++i){
+                int vs10 = view->mapFromScene(QPointF(0, m_page->geometry().topLeft().y()+i * 10 * m_page->unitFactor())).y();
+                int vs5  = view->mapFromScene(QPointF(0, m_page->geometry().topLeft().y()+i * 10 * m_page->unitFactor() + 5 * m_page->unitFactor())).y();
+                if (vs10 > 0){
+                    if (vStartPos > 0){
+                        vs10 -= vStartPos;
+                        vs5 -= vStartPos;
+                    }
+                    painter.drawLine(15, vs10, 20, vs10);
+                    if ( i > 0 )
+                        painter.drawText(QPoint( (15 - painter.fontMetrics().width(QString::number(i))) / 2 ,
+                                                 vs10 + (painter.fontMetrics().height()/2)), QString::number(i));
+                    painter.drawLine(10, vs5, 20, vs5);
+                }
+            }
+            painter.setPen(palette().foreground().color());
+            painter.drawLine(0, m_mousePos.y() - (vStartPos > 0 ? vStartPos : 0),
+                             20, m_mousePos.y() - (vStartPos > 0 ? vStartPos : 0));
+            break;
+        }
+    }
+}
+
+void Ruler::drawItemWithChildren(QPainter* painter, BaseDesignIntf *item)
+{
+    foreach(BaseDesignIntf* child, item->childBaseItems()){
+        if (!child->childBaseItems().isEmpty())
+            drawItemWithChildren(painter, child);
+        else drawItem(painter, child);
+
+    }
+    drawItem(painter, item);
+}
+
+void Ruler::drawItem(QPainter* painter, BaseDesignIntf *item)
+{
+    if (!item->isSelected()) return;
+
+    QGraphicsView* view = qobject_cast<QGraphicsView*>(parent());
+    int hStartPos = view->mapFromScene(0,0).x();
+    int vStartPos = view->mapFromScene(0,0).y();
+
+    int itemWidth = view->mapFromScene(item->mapToScene(item->geometry().width(),0).x() - item->mapToScene(0,0).x(), 0).x() - hStartPos;
+    int itemHeight = view->mapFromScene(0, item->mapToScene(0, item->geometry().height()).y() - item->mapToScene(0,0).y()).y() - vStartPos;
+
+    switch (m_type) {
+    case Horizontal:
+        if (item->isSelected())
+         painter->drawRect(view->mapFromScene(item->mapToScene(0,0)).x() - (hStartPos > 0 ? hStartPos : 0)  , 0,
+                          itemWidth, 20);
+        break;
+    case Vertical:
+        if (item->isSelected())
+            painter->drawRect(0, view->mapFromScene(item->mapToScene(0, 0)).y() - (vStartPos > 0 ? vStartPos : 0),
+                             20, itemHeight);
+        break;
+    }
 }
 
 }

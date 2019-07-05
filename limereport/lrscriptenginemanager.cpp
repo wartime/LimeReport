@@ -32,7 +32,7 @@
 #include <QDate>
 #include <QStringList>
 #include <QUuid>
-#ifndef USE_QJSENGINE
+#ifdef USE_QTSCRIPTENGINE
 #include <QScriptValueIterator>
 #endif
 #include <QMessageBox>
@@ -50,7 +50,7 @@ Q_DECLARE_METATYPE(QColor)
 Q_DECLARE_METATYPE(QFont)
 Q_DECLARE_METATYPE(LimeReport::ScriptEngineManager *)
 
-#ifndef USE_QJSENGINE
+#ifdef USE_QTSCRIPTENGINE
 QScriptValue constructColor(QScriptContext *context, QScriptEngine *engine)
 {
      QColor color(context->argument(0).toString());
@@ -278,7 +278,7 @@ bool ScriptEngineManager::containsFunction(const QString& functionName){
     return false;
 }
 
-#ifndef USE_QJSENGINE
+#ifdef USE_QTSCRIPTENGINE
 #if QT_VERSION > 0x050600
 Q_DECL_DEPRECATED
 #endif
@@ -336,7 +336,7 @@ QStringList ScriptEngineManager::functionsNames()
 }
 
 void ScriptEngineManager::setDataManager(DataSourceManager *dataManager){
-    if (m_dataManager != dataManager){
+    if (dataManager && m_dataManager != dataManager){
         m_dataManager =  dataManager;
         if (m_dataManager){
             foreach(QString func, m_dataManager->groupFunctionNames()){
@@ -545,17 +545,38 @@ QVariant ScriptEngineManager::evaluateScript(const QString& script){
     return QVariant();
 }
 
-void ScriptEngineManager::addTableOfContentsItem(const QString& uniqKey, const QString& content, int indent)
-{
+void ScriptEngineManager::addBookMark(const QString& uniqKey, const QString& content){
     Q_ASSERT(m_context != 0);
     if (m_context){
         BandDesignIntf* currentBand = m_context->getCurrentBand();
-        m_context->tableOfContents()->setItem(uniqKey, content, 0, indent);
         if (currentBand)
             currentBand->addBookmark(uniqKey, content);
         else if (m_context->getCurrentPage()) {
             m_context->getCurrentPage()->addBookmark(uniqKey, content);
         }
+    }
+
+}
+
+int ScriptEngineManager::findPageIndexByBookmark(const QString &uniqKey)
+{
+    for (int i=0; i < m_context->reportPages()->size(); ++i){
+        if (m_context->reportPages()->at(i)->bookmarks().contains(uniqKey))
+            return i+1;
+        foreach(BandDesignIntf* band, m_context->reportPages()->at(i)->bands()){
+            if (band->bookmarks().contains(uniqKey))
+                return i+1;
+        }
+    }
+    return -1;
+}
+
+void ScriptEngineManager::addTableOfContentsItem(const QString& uniqKey, const QString& content, int indent)
+{
+    Q_ASSERT(m_context != 0);
+    if (m_context){
+        m_context->tableOfContents()->setItem(uniqKey, content, 0, indent);
+        addBookMark(uniqKey, content);
     }
 }
 
@@ -619,24 +640,22 @@ bool ScriptEngineManager::createNumberFomatFunction()
 }
 
 bool ScriptEngineManager::createDateFormatFunction(){
-//    addFunction("dateFormat",dateFormat,"DATE&TIME", "dateFormat(\""+tr("Value")+"\",\""+tr("Format")+"\")");
     JSFunctionDesc fd;
 
     fd.setManager(m_functionManager);
     fd.setManagerName(LimeReport::Const::FUNCTION_MANAGER_NAME);
     fd.setCategory(tr("DATE&TIME"));
     fd.setName("dateFormat");
-    fd.setDescription("dateFormat(\""+tr("Value")+"\",\""+tr("Format")+"\")");
-    fd.setScriptWrapper(QString("function dateFormat(value, format){"
+    fd.setDescription("dateFormat(\""+tr("Value")+"\",\""+tr("Format")+"\", \""+tr("Locale")+"\")");
+    fd.setScriptWrapper(QString("function dateFormat(value, format, locale){"
                                 " if(typeof(format)==='undefined') format = \"dd.MM.yyyy\"; "
-                                "return %1.dateFormat(value,format);}"
+                                "return %1.dateFormat(value,format, locale);}"
                                ).arg(LimeReport::Const::FUNCTION_MANAGER_NAME)
                         );
     return addFunction(fd);
 }
 
 bool ScriptEngineManager::createTimeFormatFunction(){
-//    addFunction("timeFormat",timeFormat,"DATE&TIME", "dateFormat(\""+tr("Value")+"\",\""+tr("Format")+"\")");
     JSFunctionDesc fd;
 
     fd.setManager(m_functionManager);
@@ -653,17 +672,16 @@ bool ScriptEngineManager::createTimeFormatFunction(){
 }
 
 bool ScriptEngineManager::createDateTimeFormatFunction(){
-//    addFunction("dateTimeFormat", dateTimeFormat, "DATE&TIME", "dateTimeFormat(\""+tr("Value")+"\",\""+tr("Format")+"\")");
     JSFunctionDesc fd;
 
     fd.setManager(m_functionManager);
     fd.setManagerName(LimeReport::Const::FUNCTION_MANAGER_NAME);
     fd.setCategory(tr("DATE&TIME"));
     fd.setName("dateTimeFormat");
-    fd.setDescription("dateTimeFormat(\""+tr("Value")+"\",\""+tr("Format")+"\")");
-    fd.setScriptWrapper(QString("function dateTimeFormat(value, format){"
+    fd.setDescription("dateTimeFormat(\""+tr("Value")+"\",\""+tr("Format")+"\", \""+tr("Locale")+"\")");
+    fd.setScriptWrapper(QString("function dateTimeFormat(value, format, locale){"
                                 " if(typeof(format)==='undefined') format = \"dd.MM.yyyy hh:mm\"; "
-                                "return %1.dateTimeFormat(value,format);}"
+                                "return %1.dateTimeFormat(value, format, locale);}"
                                ).arg(LimeReport::Const::FUNCTION_MANAGER_NAME)
                         );
     return addFunction(fd);
@@ -818,6 +836,53 @@ bool ScriptEngineManager::createGetFieldByKeyFunction()
     return addFunction(fd);
 }
 
+bool ScriptEngineManager::createGetFieldByRowIndex()
+{
+    JSFunctionDesc fd;
+    fd.setManager(m_functionManager);
+    fd.setManagerName(LimeReport::Const::FUNCTION_MANAGER_NAME);
+    fd.setCategory(tr("GENERAL"));
+    fd.setName("getFieldByRowIndex");
+    fd.setDescription("getFieldByRowIndex(\""+tr("FieldName")+"\", \""+
+                      tr("RowIndex")+"\")"
+    );
+    fd.setScriptWrapper(QString("function getFieldByRowIndex(fieldName, rowIndex){"
+                                "return %1.getFieldByRowIndex(fieldName, rowIndex);}"
+                               ).arg(LimeReport::Const::FUNCTION_MANAGER_NAME)
+                        );
+    return addFunction(fd);
+}
+
+bool ScriptEngineManager::createAddBookmarkFunction()
+{
+    JSFunctionDesc fd;
+    fd.setManager(m_functionManager);
+    fd.setManagerName(LimeReport::Const::FUNCTION_MANAGER_NAME);
+    fd.setCategory(tr("GENERAL"));
+    fd.setName("addBookmark");
+    fd.setDescription("addBookmark(\""+tr("Unique identifier")+" \""+tr("Content")+"\")");
+    fd.setScriptWrapper(QString("function addBookmark(uniqKey, content){"
+                                "return %1.addBookmark(uniqKey, content);}"
+                               ).arg(LimeReport::Const::FUNCTION_MANAGER_NAME)
+                        );
+    return addFunction(fd);
+}
+
+bool ScriptEngineManager::createFindPageIndexByBookmark()
+{
+    JSFunctionDesc fd;
+    fd.setManager(m_functionManager);
+    fd.setManagerName(LimeReport::Const::FUNCTION_MANAGER_NAME);
+    fd.setCategory(tr("GENERAL"));
+    fd.setName("findPageIndexByBookmark");
+    fd.setDescription("findPageIndexByBookmark(\""+tr("Unique identifier")+"\")");
+    fd.setScriptWrapper(QString("function findPageIndexByBookmark(uniqKey){"
+                                "return %1.findPageIndexByBookmark(uniqKey);}"
+                               ).arg(LimeReport::Const::FUNCTION_MANAGER_NAME)
+                        );
+    return addFunction(fd);
+}
+
 bool ScriptEngineManager::createAddTableOfContentsItemFunction()
 {
     JSFunctionDesc fd;
@@ -869,7 +934,7 @@ ScriptEngineManager::ScriptEngineManager()
     m_scriptEngine = new ScriptEngineType;
     m_functionManager = new ScriptFunctionsManager(this);
     m_functionManager->setScriptEngineManager(this);
-#ifndef USE_QJSENGINE
+#ifdef USE_QTSCRIPTENGINE
     m_scriptEngine->setDefaultPrototype(qMetaTypeId<QComboBox*>(),
                                   m_scriptEngine->newQObject(new ComboBoxPrototype()));
 #endif
@@ -887,9 +952,10 @@ ScriptEngineManager::ScriptEngineManager()
 #endif
     createSetVariableFunction();
     createGetFieldFunction();
+    createGetFieldByRowIndex();
     createGetFieldByKeyFunction();
     createGetVariableFunction();
-#ifndef USE_QJSENGINE
+#ifdef USE_QTSCRIPTENGINE
     QScriptValue colorCtor = m_scriptEngine->newFunction(constructColor);
     m_scriptEngine->globalObject().setProperty("QColor", colorCtor);
 
@@ -898,6 +964,8 @@ ScriptEngineManager::ScriptEngineManager()
     QScriptValue fontConstructor = m_scriptEngine->newFunction(QFontPrototype::constructorQFont, fontProto);
     m_scriptEngine->globalObject().setProperty("QFont", fontConstructor);
 #endif
+    createAddBookmarkFunction();
+    createFindPageIndexByBookmark();
     createAddTableOfContentsItemFunction();
     createClearTableOfContentsFunction();
     createReopenDatasourceFunction();
@@ -1186,6 +1254,16 @@ void ScriptEngineContext::collectionLoadFinished(const QString& collectionName)
     Q_UNUSED(collectionName);
 }
 
+ReportPages* ScriptEngineContext::reportPages() const
+{
+    return m_reportPages;
+}
+
+void ScriptEngineContext::setReportPages(ReportPages *value)
+{
+    m_reportPages = value;
+}
+
 #ifdef HAVE_UI_LOADER
 QDialog* ScriptEngineContext::createDialog(DialogDescriber* cont)
 {
@@ -1304,7 +1382,7 @@ void ScriptEngineContext::baseDesignIntfToScript(const QString& pageName, BaseDe
             engine->newQObject(sItem, item);
         } else {
             sItem = engine->newQObject(item);
-            engine->globalObject().setProperty(pageName+"_"+item->patternName(),sItem);
+            engine->globalObject().setProperty(on,sItem);
         }
 #endif
         foreach(BaseDesignIntf* child, item->childBaseItems()){
@@ -1362,9 +1440,6 @@ bool ScriptEngineContext::runInitScript(){
     ScriptEngineManager::instance().setContext(this);
     m_tableOfContents->clear();
 
-#ifndef USE_QJSENGINE
-    engine->pushContext();
-#endif
     ScriptValueType res = engine->evaluate(initScript());
     if (res.isBool()) return res.toBool();
 #ifdef  USE_QJSENGINE
@@ -1505,13 +1580,14 @@ QVariant ScriptFunctionsManager::line(const QString &bandName)
 
 QVariant ScriptFunctionsManager::numberFormat(QVariant value, const char &format, int precision, const QString& locale)
 {
-    return (locale.isEmpty())?QString::number(value.toDouble(),format,precision):
-                              QLocale(locale).toString(value.toDouble(),format,precision);
+    return (locale.isEmpty()) ? QString::number(value.toDouble(),format,precision):
+                                QLocale(locale).toString(value.toDouble(),format,precision);
 }
 
-QVariant ScriptFunctionsManager::dateFormat(QVariant value, const QString &format)
+QVariant ScriptFunctionsManager::dateFormat(QVariant value, const QString &format, const QString& locale)
 {
-    return QLocale().toString(value.toDate(),format);
+    return (locale.isEmpty()) ?  QLocale().toString(value.toDate(),format) :
+                                 QLocale(locale).toString(value.toDate(),format);
 }
 
 QVariant ScriptFunctionsManager::timeFormat(QVariant value, const QString &format)
@@ -1519,9 +1595,10 @@ QVariant ScriptFunctionsManager::timeFormat(QVariant value, const QString &forma
     return QLocale().toString(value.toTime(),format);
 }
 
-QVariant ScriptFunctionsManager::dateTimeFormat(QVariant value, const QString &format)
+QVariant ScriptFunctionsManager::dateTimeFormat(QVariant value, const QString &format, const QString& locale)
 {
-    return QLocale().toString(value.toDateTime(),format);
+    return (locale.isEmpty()) ? QLocale().toString(value.toDateTime(),format) :
+                                QLocale(locale).toString(value.toDateTime(),format);
 }
 
 QVariant ScriptFunctionsManager::sectotimeFormat(QVariant value, const QString &format)
@@ -1595,10 +1672,26 @@ QVariant ScriptFunctionsManager::getFieldByKeyField(const QString& datasourceNam
     return dm->fieldDataByKey(datasourceName, valueFieldName, keyFieldName, keyValue);
 }
 
+QVariant ScriptFunctionsManager::getFieldByRowIndex(const QString &fieldName, int rowIndex)
+{
+    DataSourceManager* dm = scriptEngineManager()->dataManager();
+    return dm->fieldDataByRowIndex(fieldName, rowIndex);
+}
+
 void ScriptFunctionsManager::reopenDatasource(const QString& datasourceName)
 {
     DataSourceManager* dm = scriptEngineManager()->dataManager();
     return dm->reopenDatasource(datasourceName);
+}
+
+void ScriptFunctionsManager::addBookmark(const QString &uniqKey, const QString &content)
+{
+    scriptEngineManager()->addBookMark(uniqKey, content);
+}
+
+int ScriptFunctionsManager::findPageIndexByBookmark(const QString &uniqKey)
+{
+    return scriptEngineManager()->findPageIndexByBookmark(uniqKey);
 }
 
 void ScriptFunctionsManager::addTableOfContentsItem(const QString& uniqKey, const QString& content, int indent)
@@ -1860,6 +1953,7 @@ QObject* TableBuilder::addRow()
     checkBaseLayout();
     if (m_baseLayout && m_patternLayout){
         HorizontalLayout* newRow = new HorizontalLayout(m_baseLayout, m_baseLayout);
+        newRow->setLayoutSpacing(m_horizontalLayout->layoutSpacing());
         for(int i = 0; i < m_horizontalLayout->childrenCount(); ++i){
             BaseDesignIntf* item = dynamic_cast<BaseDesignIntf*>(m_patternLayout->at(i));
             BaseDesignIntf* cloneItem = item->cloneItem(item->itemMode(), newRow, newRow);
@@ -1923,7 +2017,7 @@ void TableBuilder::checkBaseLayout()
     }
 }
 
-#ifndef USE_QJSENGINE
+#ifdef USE_QTSCRIPTENGINE
 void ComboBoxPrototype::addItem(const QString &text)
 {
     QComboBox* comboBox = qscriptvalue_cast<QComboBox*>(thisObject());

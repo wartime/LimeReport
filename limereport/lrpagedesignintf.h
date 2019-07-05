@@ -166,6 +166,7 @@ namespace LimeReport {
         bool isUpdating(){return m_updating;}
         void endUpdate();
 
+        void rectMoved(QRectF itemRect, BaseDesignIntf* container = 0);
         void itemMoved(BaseDesignIntf* item);
         bool magneticMovement() const;
         void setMagneticMovement(bool magneticMovement);
@@ -174,6 +175,9 @@ namespace LimeReport {
         void setReportSettings(ReportSettings *reportSettings);
 
         void setPropertyToSelectedItems(const char *name, const QVariant &value);
+
+        PageItemDesignIntf* getCurrentPage() const;
+        void setCurrentPage(PageItemDesignIntf* currentPage);
 
     protected:
 
@@ -248,6 +252,9 @@ namespace LimeReport {
         void setFont(const QFont &font);
         void setTextAlign(const Qt::Alignment& alignment);
         void setBorders(const BaseDesignIntf::BorderLines& border);
+        void lockSelectedItems();
+        void unlockSelectedItems();
+        void selectOneLevelItems();
     private slots:
         void slotPageGeometryChanged(QObject*, QRectF, QRectF );
         void slotItemPropertyChanged(QString propertyName,
@@ -272,7 +279,8 @@ namespace LimeReport {
                                         const QVariant& oldPropertyValue,
                                         const QVariant& newPropertyValue);
         void changeSelectedGroupProperty(const QString& name,const QVariant& value);
-
+        void activateItemToJoin(QRectF itemRect, QList<ItemProjections>& items);
+        void selectAllChildren(BaseDesignIntf* item);
     private:
         enum JoinType{Width, Height};
         LimeReport::PageItemDesignIntf::Ptr m_pageItem;
@@ -312,6 +320,7 @@ namespace LimeReport {
         JoinType         m_joinType;
         bool             m_magneticMovement;
         ReportSettings*  m_reportSettings;
+        PageItemDesignIntf* m_currentPage;
     };
 
     class AbstractPageCommand : public CommandIf{
@@ -462,6 +471,8 @@ namespace LimeReport {
     private:
         int from;
         int to;
+        int reverceFrom;
+        int reverceTo;
     };
 
 

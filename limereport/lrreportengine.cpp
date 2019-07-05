@@ -36,6 +36,7 @@
 #include <QFileSystemWatcher>
 #include <QPluginLoader>
 #include <QFileDialog>
+#include <QGraphicsScene>
 
 #include "time.h"
 
@@ -65,6 +66,7 @@
 # define EASY_BLOCK(...)
 # define EASY_END_BLOCK
 #endif
+#include "lrpreparedpages.h"
 
 #ifdef HAVE_STATIC_BUILD
 #include "lrfactoryinitializer.h"
@@ -75,14 +77,17 @@ namespace LimeReport{
 QSettings* ReportEngine::m_settings = 0;
 
 ReportEnginePrivate::ReportEnginePrivate(QObject *parent) :
-    QObject(parent), m_fileName(""), m_settings(0), m_ownedSettings(false),
+    QObject(parent), m_preparedPagesManager(new PreparedPages(&m_preparedPages)), m_fileName(""), m_settings(0), m_ownedSettings(false),
     m_printer(new QPrinter(QPrinter::HighResolution)), m_printerSelected(false),
     m_showProgressDialog(true), m_reportName(""), m_activePreview(0),
     m_previewWindowIcon(":/report/images/logo32"), m_previewWindowTitle(tr("Preview")),
     m_reportRendering(false), m_resultIsEditable(true), m_passPhrase("HjccbzHjlbyfCkjy"),
     m_fileWatcher( new QFileSystemWatcher( this ) ), m_reportLanguage(QLocale::AnyLanguage),
     m_previewLayoutDirection(Qt::LayoutDirectionAuto), m_designerFactory(0),
-    m_previewScaleType(FitWidth), m_previewScalePercent(0), m_startTOCPage(0)
+    m_previewScaleType(FitWidth), m_previewScalePercent(0), m_startTOCPage(0),
+    m_previewPageBackgroundColor(Qt::gray),
+    m_saveToFileVisible(true), m_printToPdfVisible(true),
+    m_printVisible(true)
 {
 #ifdef HAVE_STATIC_BUILD
     initResources();
@@ -142,6 +147,7 @@ ReportEnginePrivate::~ReportEnginePrivate()
     m_translations.clear();
 
     if (m_ownedSettings&&m_settings) delete m_settings;
+    delete m_preparedPagesManager;
 }
 
 QObject* ReportEnginePrivate::createElement(const QString &, const QString &)
@@ -154,12 +160,13 @@ QObject *ReportEnginePrivate::elementAt(const QString &, int index)
     return pageAt(index);
 }
 
-PageDesignIntf *ReportEnginePrivate::createPage(const QString &pageName)
+PageDesignIntf *ReportEnginePrivate::createPage(const QString &pageName, bool preview)
 {
     PageDesignIntf* page =new PageDesignIntf();
     page->setObjectName(pageName);
     page->pageItem()->setObjectName("Report"+pageName);
-    page->setReportEditor(this);
+    if (!preview)
+        page->setReportEditor(this);
     page->setReportSettings(&m_reportSettings);
     return page;
 }
@@ -184,7 +191,7 @@ bool ReportEnginePrivate::deletePage(PageDesignIntf *page){
 
 PageDesignIntf *ReportEnginePrivate::createPreviewPage()
 {
-    return createPage();
+    return createPage("preview",true);
 }
 
 int ReportEnginePrivate::elementsCount(const QString &)
@@ -493,49 +500,68 @@ bool ReportEnginePrivate::exportReport(QString exporterName, const QString &file
     return false;
 }
 
+bool ReportEnginePrivate::showPreviewWindow(ReportPages pages, PreviewHints hints)
+{
+    if (pages.count()>0){
+        Q_Q(ReportEngine);
+        PreviewReportWindow* w = new PreviewReportWindow(q, 0, settings());
+        w->setWindowFlags(Qt::Dialog|Qt::WindowMaximizeButtonHint|Qt::WindowCloseButtonHint| Qt::WindowMinMaxButtonsHint);
+        w->setAttribute(Qt::WA_DeleteOnClose,true);
+        w->setWindowModality(Qt::ApplicationModal);
+        //w->setWindowIcon(QIcon(":/report/images/main.ico"));
+        w->setWindowIcon(m_previewWindowIcon);
+        w->setWindowTitle(m_previewWindowTitle);
+        w->setSettings(settings());
+        w->setPages(pages);
+        w->setLayoutDirection(m_previewLayoutDirection);
+        w->setStyleSheet(styleSheet());
+
+        if (!dataManager()->errorsList().isEmpty()){
+            w->setErrorMessages(dataManager()->errorsList());
+        }
+
+        if (!hints.testFlag(PreviewBarsUserSetting)){
+            w->setMenuVisible(!hints.testFlag(HidePreviewMenuBar));
+            w->setStatusBarVisible(!hints.testFlag(HidePreviewStatusBar));
+            w->setToolBarVisible(!hints.testFlag(HidePreviewToolBar));
+        }
+
+        w->setHideResultEditButton(resultIsEditable());
+        w->setHidePrintButton(printIsVisible());
+        w->setHideSaveToFileButton(saveToFileIsVisible());
+        w->setHidePrintToPdfButton(printToPdfIsVisible());
+        w->setEnablePrintMenu(printIsVisible() || printToPdfIsVisible());
+
+        m_activePreview = w;
+
+        w->setPreviewScaleType(m_previewScaleType, m_previewScalePercent);
+
+        connect(w,SIGNAL(destroyed(QObject*)), this, SLOT(slotPreviewWindowDestroyed(QObject*)));
+        connect(w, SIGNAL(onSave(bool&, LimeReport::IPreparedPages*)),
+                this, SIGNAL(onSavePreview(bool&, LimeReport::IPreparedPages*)));
+        w->exec();
+        return true;
+    }
+    return false;
+}
+
 void ReportEnginePrivate::previewReport(PreviewHints hints)
 { 
-//    QTime start = QTime::currentTime();
-    try{
-        dataManager()->setDesignTime(false);
-        ReportPages pages = renderToPages();
-        dataManager()->setDesignTime(true);
-        if (pages.count()>0){
-            Q_Q(ReportEngine);
-            PreviewReportWindow* w = new PreviewReportWindow(q,0,settings());
-            w->setWindowFlags(Qt::Dialog|Qt::WindowMaximizeButtonHint|Qt::WindowCloseButtonHint| Qt::WindowMinMaxButtonsHint);
-            w->setAttribute(Qt::WA_DeleteOnClose,true);
-            w->setWindowModality(Qt::ApplicationModal);
-            //w->setWindowIcon(QIcon(":/report/images/main.ico"));
-            w->setWindowIcon(m_previewWindowIcon);
-            w->setWindowTitle(m_previewWindowTitle);
-            w->setSettings(settings());
-            w->setPages(pages);
-            w->setLayoutDirection(m_previewLayoutDirection);
+    previewReport(0, hints);
+}
 
-            if (!dataManager()->errorsList().isEmpty()){
-                w->setErrorMessages(dataManager()->errorsList());
-            }
-
-            if (!hints.testFlag(PreviewBarsUserSetting)){
-                w->setMenuVisible(!hints.testFlag(HidePreviewMenuBar));
-                w->setStatusBarVisible(!hints.testFlag(HidePreviewStatusBar));
-                w->setToolBarVisible(!hints.testFlag(HidePreviewToolBar));
-            }
-
-            w->setHideResultEditButton(resultIsEditable());
-            w->setStyleSheet(m_styleSheet);
-            m_activePreview = w;
-
-            w->setPreviewScaleType(m_previewScaleType, m_previewScalePercent);
-
-            connect(w,SIGNAL(destroyed(QObject*)), this, SLOT(slotPreviewWindowDestroyed(QObject*)));
-            w->exec();
+void ReportEnginePrivate::previewReport(QPrinter *printer, PreviewHints hints)
+{
+    //    QTime start = QTime::currentTime();
+        try{
+            dataManager()->setDesignTime(false);
+            ReportPages pages = renderToPages();
+            dataManager()->setDesignTime(true);
+            showPreviewWindow(pages, hints);
+        } catch (ReportError &exception){
+            saveError(exception.what());
+            showError(exception.what());
         }
-    } catch (ReportError &exception){
-        saveError(exception.what());
-        showError(exception.what());
-    }
 }
 
 ReportDesignWindowInterface*ReportEnginePrivate::getDesignerWindow()
@@ -584,6 +610,7 @@ PageDesignIntf* ReportEnginePrivate::createPreviewScene(QObject* parent){
         ReportPages pages = renderToPages();
         result = new PageDesignIntf(parent);
         result->setPageItems(pages);
+        result->setItemMode(PrintMode);
     } catch (ReportError &exception){
         saveError(exception.what());
         showError(exception.what());
@@ -710,7 +737,7 @@ void ReportEnginePrivate::cancelRender()
     m_reportRendering = false;
 }
 
-PageDesignIntf* ReportEngine::createPreviewScene(QObject* parent){
+QGraphicsScene* ReportEngine::createPreviewScene(QObject* parent){
     Q_D(ReportEngine);
     return d->createPreviewScene(parent);
 }
@@ -928,6 +955,16 @@ void ReportEnginePrivate::setPreviewScaleType(const ScaleType &scaleType, int pe
     m_previewScalePercent = percent;
 }
 
+void ReportEnginePrivate::addWatermark(const WatermarkSetting &watermarkSetting)
+{
+    m_watermarks.append(watermarkSetting);
+}
+
+void ReportEnginePrivate::clearWatermarks()
+{
+    m_watermarks.clear();
+}
+
 PageItemDesignIntf* ReportEnginePrivate::getPageByName(const QString& pageName)
 {
     foreach(PageItemDesignIntf* page, m_renderingPages){
@@ -935,6 +972,34 @@ PageItemDesignIntf* ReportEnginePrivate::getPageByName(const QString& pageName)
             return page;
     }
     return 0;
+}
+
+IPreparedPages *ReportEnginePrivate::preparedPages(){
+    return m_preparedPagesManager;
+}
+
+bool ReportEnginePrivate::showPreparedPages(PreviewHints hints)
+{
+    return showPreviewWindow(m_preparedPages, hints);
+}
+
+bool ReportEnginePrivate::prepareReportPages()
+{
+    try{
+        dataManager()->setDesignTime(false);
+        m_preparedPages = renderToPages();
+        dataManager()->setDesignTime(true);
+    } catch (ReportError &exception){
+        saveError(exception.what());
+        showError(exception.what());
+        return false;
+    }
+    return !m_preparedPages.isEmpty();
+}
+
+bool ReportEnginePrivate::printPreparedPages()
+{
+    return printPages(m_preparedPages, 0);
 }
 
 Qt::LayoutDirection ReportEnginePrivate::previewLayoutDirection()
@@ -1016,20 +1081,20 @@ QList<QLocale::Language> ReportEnginePrivate::designerLanguages()
 {
 
     QList<QLocale::Language> result;
-    emit getAviableLanguages(&result);
+    emit getAvailableDesignerLanguages(&result);
     return result;
 }
 
 QLocale::Language ReportEnginePrivate::currentDesignerLanguage()
 {
-    QLocale::Language result = emit getCurrentDefaultLanguage();
+    QLocale::Language result = emit getCurrentDefaultDesignerLanguage();
     return result;
 }
 
 void ReportEnginePrivate::setCurrentDesignerLanguage(QLocale::Language language)
 {
     m_currentDesignerLanguage = language;
-    emit currentDefaulLanguageChanged(language);
+    emit currentDefaultDesignerLanguageChanged(language);
 }
 
 QString ReportEnginePrivate::styleSheet() const
@@ -1069,6 +1134,36 @@ void ReportEnginePrivate::setResultEditable(bool value)
     m_resultIsEditable = value;
 }
 
+bool ReportEnginePrivate::saveToFileIsVisible() const
+{
+    return m_saveToFileVisible;
+}
+
+void ReportEnginePrivate::setSaveToFileVisible(bool value)
+{
+    m_saveToFileVisible = value;
+}
+
+bool ReportEnginePrivate::printToPdfIsVisible() const
+{
+    return m_printToPdfVisible;
+}
+
+void ReportEnginePrivate::setPrintToPdfVisible(bool value)
+{
+    m_printToPdfVisible = value;
+}
+
+bool ReportEnginePrivate::printIsVisible() const
+{
+    return m_printVisible;
+}
+
+void ReportEnginePrivate::setPrintVisible(bool value)
+{
+    m_printVisible = value;
+}
+
 bool ReportEnginePrivate::suppressFieldAndVarError() const
 {
     return m_reportSettings.suppressAbsentFieldsAndVarsWarnings();
@@ -1092,6 +1187,16 @@ QString ReportEnginePrivate::previewWindowTitle() const
 void ReportEnginePrivate::setPreviewWindowTitle(const QString &previewWindowTitle)
 {
     m_previewWindowTitle = previewWindowTitle;
+}
+
+QColor ReportEnginePrivate::previewWindowPageBackground()
+{
+    return m_previewPageBackgroundColor;
+}
+
+void ReportEnginePrivate::setPreviewWindowPageBackground(QColor color)
+{
+    m_previewPageBackgroundColor = color;
 }
 
 QIcon ReportEnginePrivate::previewWindowIcon() const
@@ -1131,6 +1236,24 @@ void ReportEnginePrivate::paintByExternalPainter(const QString& objectName, QPai
     emit externalPaint(objectName, painter, options);
 }
 
+BaseDesignIntf* ReportEnginePrivate::createWatermark(PageDesignIntf* page, WatermarkSetting watermarkSetting)
+{
+
+    WatermarkHelper watermarkHelper(watermarkSetting);
+
+    BaseDesignIntf* watermark = page->addReportItem("TextItem", watermarkHelper.mapToPage(*page->pageItem()), watermarkHelper.sceneSize());
+    if (watermark){
+        watermark->setProperty("content", watermarkSetting.text());
+        watermark->setProperty("font",watermarkSetting.font());
+        watermark->setProperty("watermark",true);
+        watermark->setProperty("itemLocation",1);
+        watermark->setProperty("foregroundOpacity", watermarkSetting.opacity());
+        watermark->setProperty("fontColor", watermarkSetting.color());
+    }
+    return watermark;
+
+}
+
 ReportPages ReportEnginePrivate::renderToPages()
 {
     int startTOCPage = -1;
@@ -1154,13 +1277,28 @@ ReportPages ReportEnginePrivate::renderToPages()
         m_reportRender->setScriptContext(scriptContext());
         m_renderingPages.clear();
         foreach (PageDesignIntf* page, m_pages) {
+
+            QVector<BaseDesignIntf*> watermarks;
+            if (!m_watermarks.isEmpty()){
+                foreach(WatermarkSetting watermarkSetting, m_watermarks){
+                    watermarks.append(createWatermark(page, watermarkSetting));
+                }
+            }
+
             PageItemDesignIntf* rp = createRenderingPage(page->pageItem());
+
+
+            qDeleteAll(watermarks.begin(),watermarks.end());
+            watermarks.clear();
+
             m_renderingPages.append(rp);
             scriptContext()->baseDesignIntfToScript(rp->objectName(), rp);
         }
 
         scriptContext()->qobjectToScript("engine",this);
-
+#ifdef USE_QTSCRIPTENGINE
+    ScriptEngineManager::instance().scriptEngine()->pushContext();
+#endif
         if (m_scriptEngineContext->runInitScript()){
 
             dataManager()->clearErrors();
@@ -1170,6 +1308,7 @@ ReportPages ReportEnginePrivate::renderToPages()
 
             activateLanguage(m_reportLanguage);
             emit renderStarted();
+            m_scriptEngineContext->setReportPages(&result);
 
             for(int i = 0; i < m_renderingPages.count(); ++i){
                 PageItemDesignIntf* page = m_renderingPages.at(i);
@@ -1218,6 +1357,9 @@ ReportPages ReportEnginePrivate::renderToPages()
         }
         m_reportRendering = false;
         //activateLanguage(QLocale::AnyLanguage);
+#ifdef USE_QTSCRIPTENGINE
+    ScriptEngineManager::instance().scriptEngine()->popContext();
+#endif
         return result;
     } else {
         return ReportPages();
@@ -1246,16 +1388,17 @@ ReportEngine::ReportEngine(QObject *parent)
     connect(d, SIGNAL(cleared()), this, SIGNAL(cleared()));
     connect(d, SIGNAL(printedToPDF(QString)), this, SIGNAL(printedToPDF(QString)));
     
-    connect(d, SIGNAL(getAviableLanguages(QList<QLocale::Language>*)),
-            this, SIGNAL(getAviableLanguages(QList<QLocale::Language>*)));
-    connect(d, SIGNAL(currentDefaulLanguageChanged(QLocale::Language)),
-            this, SIGNAL(currentDefaulLanguageChanged(QLocale::Language)));
-    connect(d, SIGNAL(getCurrentDefaultLanguage()),
-            this, SIGNAL(getCurrentDefaultLanguage()));
+    connect(d, SIGNAL(getAvailableDesignerLanguages(QList<QLocale::Language>*)),
+            this, SIGNAL(getAvailableDesignerLanguages(QList<QLocale::Language>*)));
+    connect(d, SIGNAL(currentDefaultDesignerLanguageChanged(QLocale::Language)),
+            this, SIGNAL(currentDefaultDesignerLanguageChanged(QLocale::Language)));
+    connect(d, SIGNAL(getCurrentDefaultDesignerLanguage()),
+            this, SIGNAL(getCurrentDefaultDesignerLanguage()));
 
     connect(d, SIGNAL(externalPaint(const QString&, QPainter*, const QStyleOptionGraphicsItem*)),
             this, SIGNAL(externalPaint(const QString&, QPainter*, const QStyleOptionGraphicsItem*)));
-
+    connect(d, SIGNAL(onSavePreview(bool&, LimeReport::IPreparedPages*)),
+            this, SIGNAL(onSavePreview(bool&, LimeReport::IPreparedPages*)));
 }
 
 ReportEngine::~ReportEngine()
@@ -1306,6 +1449,14 @@ void ReportEngine::previewReport(PreviewHints hints)
     d->previewReport(hints);
 }
 
+void ReportEngine::previewReport(QPrinter *printer, PreviewHints hints)
+{
+    Q_D(ReportEngine);
+    if (m_settings)
+        d->setSettings(m_settings);
+    d->previewReport(printer, hints);
+}
+
 void ReportEngine::designReport()
 {
     Q_D(ReportEngine);
@@ -1338,6 +1489,12 @@ void ReportEngine::setPreviewWindowIcon(const QIcon &icon)
     d->setPreviewWindowIcon(icon);
 }
 
+void ReportEngine::setPreviewPageBackgroundColor(QColor color)
+{
+    Q_D(ReportEngine);
+    d->setPreviewWindowPageBackground(color);
+}
+
 void ReportEngine::setResultEditable(bool value)
 {
     Q_D(ReportEngine);
@@ -1350,19 +1507,55 @@ bool ReportEngine::resultIsEditable()
     return d->resultIsEditable();
 }
 
+void ReportEngine::setSaveToFileVisible(bool value)
+{
+    Q_D(ReportEngine);
+    d->setSaveToFileVisible(value);
+}
+
+bool ReportEngine::saveToFileIsVisible()
+{
+    Q_D(ReportEngine);
+    return d->saveToFileIsVisible();
+}
+
+void ReportEngine::setPrintToPdfVisible(bool value)
+{
+    Q_D(ReportEngine);
+    d->setPrintToPdfVisible(value);
+}
+
+bool ReportEngine::printToPdfIsVisible()
+{
+    Q_D(ReportEngine);
+    return d->printToPdfIsVisible();
+}
+
+void ReportEngine::setPrintVisible(bool value)
+{
+    Q_D(ReportEngine);
+    d->setPrintVisible(value);
+}
+
+bool ReportEngine::printIsVisible()
+{
+    Q_D(ReportEngine);
+    return d->printIsVisible();
+}
+
 bool ReportEngine::isBusy()
 {
     Q_D(ReportEngine);
     return d->isBusy();
 }
 
-void ReportEngine::setPassPharse(QString &passPharse)
+void ReportEngine::setPassPhrase(QString &passPhrase)
 {
     Q_D(ReportEngine);
-    d->setPassPhrase(passPharse);
+    d->setPassPhrase(passPhrase);
 }
 
-QList<QLocale::Language> ReportEngine::aviableLanguages()
+QList<QLocale::Language> ReportEngine::availableLanguages()
 {
     Q_D(ReportEngine);
     return d->aviableLanguages();
@@ -1416,6 +1609,41 @@ void ReportEngine::setPreviewScaleType(const ScaleType &previewScaleType, int pe
     d->setPreviewScaleType(previewScaleType, percent);
 }
 
+void ReportEngine::addWatermark(const WatermarkSetting &watermarkSetting)
+{
+    Q_D(ReportEngine);
+    d->addWatermark(watermarkSetting);
+}
+
+void ReportEngine::clearWatermarks()
+{
+    Q_D(ReportEngine);
+    d->clearWatermarks();
+}
+
+IPreparedPages *ReportEngine::preparedPages()
+{
+    Q_D(ReportEngine);
+    return d->preparedPages();
+}
+
+bool ReportEngine::showPreparedPages(PreviewHints hints)
+{
+    Q_D(ReportEngine);
+    return d->showPreparedPages(hints);
+}
+
+bool ReportEngine::prepareReportPages()
+{
+    Q_D(ReportEngine);
+    return d->prepareReportPages();
+}
+
+bool ReportEngine::printPreparedPages()
+{
+    Q_D(ReportEngine);
+    return d->printPreparedPages();
+}
 
 void ReportEngine::setShowProgressDialog(bool value)
 {
@@ -1559,19 +1787,31 @@ bool PrintProcessor::printPage(PageItemDesignIntf::Ptr page)
     m_printer->getPageMargins(&leftMargin, &topMargin, &rightMargin, &bottomMargin, QPrinter::Millimeter);
 
     QRectF printerPageRect = m_printer->pageRect(QPrinter::Millimeter);
-    printerPageRect = QRectF(0,0,(printerPageRect.size().width() + rightMargin + leftMargin) * Const::mmFACTOR,
-                                 (printerPageRect.size().height() + bottomMargin +topMargin) * Const::mmFACTOR);
+    printerPageRect = QRectF(0,0,(printerPageRect.size().width() + rightMargin + leftMargin) * page->unitFactor(),
+                                 (printerPageRect.size().height() + bottomMargin +topMargin) * page->unitFactor());
 
-    if (m_printer->pageSize() != static_cast<QPrinter::PageSize>(page->pageSize()) &&
+    if  (page->printBehavior() == PageItemDesignIntf::Split && m_printer->pageSize() != static_cast<QPrinter::PageSize>(page->pageSize()) &&
         printerPageRect.width() < page->geometry().width())
     {
         qreal pageWidth = page->geometry().width();
+        qreal pageHeight =  page->geometry().height();
         QRectF currentPrintingRect = printerPageRect;
-        while (pageWidth>0){
-            renderPage.render(m_painter, m_printer->pageRect(), currentPrintingRect);
-            currentPrintingRect.adjust(printerPageRect.size().width(),0,printerPageRect.size().width(),0);
-            pageWidth -= printerPageRect.size().width();
-            if (pageWidth>0) m_printer->newPage();
+        qreal curHeight = 0;
+        qreal curWidth = 0;
+        bool first = true;
+        while (pageHeight > 0){
+            while (curWidth < pageWidth){
+                if (!first) m_printer->newPage(); else first = false;
+                renderPage.render(m_painter, m_printer->pageRect(), currentPrintingRect);
+                currentPrintingRect.adjust(printerPageRect.size().width(), 0, printerPageRect.size().width(), 0);
+                curWidth += printerPageRect.size().width();
+
+            }
+            pageHeight -= printerPageRect.size().height();
+            curHeight += printerPageRect.size().height();
+            currentPrintingRect = printerPageRect;
+            currentPrintingRect.adjust(0, curHeight, 0, curHeight);
+            curWidth = 0;
         }
 
     } else {
@@ -1609,6 +1849,181 @@ void PrintProcessor::initPrinter(PageItemDesignIntf* page)
         }
     }
 }
+
+qreal ItemGeometry::x() const
+{
+    return m_x;
+}
+
+void ItemGeometry::setX(const qreal &x)
+{
+    m_x = x;
+}
+
+qreal ItemGeometry::y() const
+{
+    return m_y;
+}
+
+void ItemGeometry::setY(const qreal &y)
+{
+    m_y = y;
+}
+
+qreal ItemGeometry::width() const
+{
+    return m_width;
+}
+
+void ItemGeometry::setWidth(const qreal &width)
+{
+    m_width = width;
+}
+
+qreal ItemGeometry::height() const
+{
+    return m_height;
+}
+
+void ItemGeometry::setHeight(const qreal &height)
+{
+    m_height = height;
+}
+
+ItemGeometry::Type ItemGeometry::type() const
+{
+    return m_type;
+}
+
+void ItemGeometry::setType(const Type &type)
+{
+    m_type = type;
+}
+
+Qt::Alignment ItemGeometry::anchor() const
+{
+    return m_anchor;
+}
+
+void ItemGeometry::setAnchor(const Qt::Alignment &anchor)
+{
+    m_anchor = anchor;
+}
+
+QString WatermarkSetting::text() const
+{
+    return m_text;
+}
+
+void WatermarkSetting::setText(const QString &text)
+{
+    m_text = text;
+}
+
+QFont WatermarkSetting::font() const
+{
+    return m_font;
+}
+
+void WatermarkSetting::setFont(const QFont &font)
+{
+    m_font = font;
+}
+
+int WatermarkSetting::opacity() const
+{
+    return m_opacity;
+}
+
+void WatermarkSetting::setOpacity(const int &opacity)
+{
+    m_opacity = opacity;
+}
+
+ItemGeometry WatermarkSetting::geometry() const
+{
+    return m_geometry;
+}
+
+void WatermarkSetting::setGeometry(const ItemGeometry &geometry)
+{
+    m_geometry = geometry;
+}
+
+QColor WatermarkSetting::color() const
+{
+    return m_color;
+}
+
+void WatermarkSetting::setColor(const QColor &color)
+{
+    m_color = color;
+}
+
+qreal WatermarkHelper::sceneX()
+{
+    return valueToPixels(m_watermark.geometry().x());
+}
+
+qreal WatermarkHelper::sceneY()
+{
+    return valueToPixels(m_watermark.geometry().y());
+}
+
+qreal WatermarkHelper::sceneWidth()
+{
+    return valueToPixels(m_watermark.geometry().width());
+}
+
+qreal WatermarkHelper::sceneHeight()
+{
+    return valueToPixels(m_watermark.geometry().height());
+}
+
+QPointF WatermarkHelper::scenePos()
+{
+    return (QPointF(sceneX(), sceneY()));
+}
+
+QSizeF WatermarkHelper::sceneSize()
+{
+    return (QSizeF(sceneWidth(), sceneHeight()));
+}
+
+QPointF WatermarkHelper::mapToPage(const PageItemDesignIntf &page)
+{
+    qreal startX = 0;
+    qreal startY = 0;
+
+    if ( m_watermark.geometry().anchor() & Qt::AlignLeft){
+        startX = 0;
+    } else if ( m_watermark.geometry().anchor() & Qt::AlignRight){
+        startX = page.geometry().width();
+    } else {
+        startX = page.geometry().width() / 2;
+    }
+
+    if ( m_watermark.geometry().anchor() & Qt::AlignTop){
+        startY = 0;
+    } else if (m_watermark.geometry().anchor() & Qt::AlignBottom){
+        startY = page.geometry().height();
+    } else {
+        startY = page.geometry().height() / 2;
+    }
+
+    return QPointF(startX + sceneX(), startY + sceneY());
+}
+
+qreal WatermarkHelper::valueToPixels(qreal value)
+{
+    switch (m_watermark.geometry().type()) {
+    case LimeReport::ItemGeometry::Millimeters:
+        return value * Const::mmFACTOR;
+    case LimeReport::ItemGeometry::Pixels:
+        return value;
+    }
+}
+
 
 }// namespace LimeReport
 

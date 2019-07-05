@@ -431,6 +431,10 @@ p, li { white-space: pre-wrap; }
         <source>Create Vertical Layout</source>
         <translation>Создать Вертикальную Компановку</translation>
     </message>
+    <message>
+        <source>Lock item geometry</source>
+        <translation>Блокировать изменения геометрии</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::ConnectionDesc</name>
@@ -989,6 +993,22 @@ p, li { white-space: pre-wrap; }
         <source>TitleAlignCenter</source>
         <translation>Название по центру</translation>
     </message>
+    <message>
+        <source>Millimeters</source>
+        <translation>Миллиметры</translation>
+    </message>
+    <message>
+        <source>Inches</source>
+        <translation>Дюймы</translation>
+    </message>
+    <message>
+        <source>Scale</source>
+        <translation>Масштабировать</translation>
+    </message>
+    <message>
+        <source>Split</source>
+        <translation>Разделять на части</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::FlagsPropItem</name>
@@ -1218,6 +1238,21 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>LimeReport::ObjectInspectorWidget</name>
+    <message>
+        <source>Clear</source>
+        <translation>Очистить</translation>
+    </message>
+    <message>
+        <source>Filter</source>
+        <translation>Фильтр</translation>
+    </message>
+    <message>
+        <source>Translate properties</source>
+        <translation>Переводить имена свойств</translation>
+    </message>
+</context>
+<context>
     <name>LimeReport::PDFExporter</name>
     <message>
         <source>Export to PDF</source>
@@ -1397,6 +1432,30 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Show toolbar</source>
         <translation>Показать панель инструментов</translation>
+    </message>
+    <message>
+        <source>toolBar_2</source>
+        <translation>Редактирование</translation>
+    </message>
+    <message>
+        <source>InsertTextItem</source>
+        <translation>Вставить текстовый элемент</translation>
+    </message>
+    <message>
+        <source>Add new TextItem</source>
+        <translation>Текстовый элемент</translation>
+    </message>
+    <message>
+        <source>Selection Mode</source>
+        <translation>Режим выбора</translation>
+    </message>
+    <message>
+        <source>Delete Item</source>
+        <translation>Удалить элемент</translation>
+    </message>
+    <message>
+        <source>Del</source>
+        <translation>Удалить</translation>
     </message>
 </context>
 <context>
@@ -1822,7 +1881,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>setPageSizeToPrinter</source>
-        <translation>Оправитьпараметры страницы в принтер</translation>
+        <translation>Отправить параметры страницы в принтер</translation>
     </message>
     <message>
         <source>fillInSecondPass</source>
@@ -1888,9 +1947,37 @@ p, li { white-space: pre-wrap; }
         <source>layoutSpacing</source>
         <translation>Интервал</translation>
     </message>
+    <message>
+        <source>printerName</source>
+        <translation>Имя принтера</translation>
+    </message>
+    <message>
+        <source>fontLetterSpacing</source>
+        <translation>Межсимвольный интервал</translation>
+    </message>
+    <message>
+        <source>hideText</source>
+        <translation>Скрывать текст</translation>
+    </message>
+    <message>
+        <source>option3</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>units</source>
+        <translation>Единицы измерения</translation>
+    </message>
+    <message>
+        <source>geometryLocked</source>
+        <translation>Геометрия заблокирована</translation>
+    </message>
+    <message>
+        <source>printBehavior</source>
+        <translation>Режим печати</translation>
+    </message>
 </context>
 <context>
-    <name>LimeReport::RectMMPropItem</name>
+    <name>LimeReport::RectPropItem</name>
     <message>
         <source>width</source>
         <translation>ширина</translation>
@@ -1901,7 +1988,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>LimeReport::RectPropItem</name>
+    <name>LimeReport::RectUnitPropItem</name>
     <message>
         <source>width</source>
         <translation>ширина</translation>
@@ -2212,6 +2299,18 @@ p, li { white-space: pre-wrap; }
         <source>Dialog Designer Tools</source>
         <translation>Панель Инструментов</translation>
     </message>
+    <message>
+        <source>Lock selected items</source>
+        <translation>Заблокировать выбранные элементы</translation>
+    </message>
+    <message>
+        <source>Unlock selected items</source>
+        <translation>Разблокировать выбранные элементы</translation>
+    </message>
+    <message>
+        <source>Select one level items</source>
+        <translation>Выбрать все элементы одного уровня</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::ReportEnginePrivate</name>
@@ -2380,6 +2479,22 @@ This preview is no longer valid.</source>
     <message>
         <source>Datasource with name %1 already exist</source>
         <translation>Источник данных %1 уже существует</translation>
+    </message>
+    <message>
+        <source>CSV</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Separator</source>
+        <translation>Разделитель</translation>
+    </message>
+    <message>
+        <source>;</source>
+        <translation>;</translation>
+    </message>
+    <message>
+        <source>Use first row as header</source>
+        <translation>Первая строка как заголовок</translation>
     </message>
 </context>
 <context>
@@ -2553,6 +2668,10 @@ This preview is no longer valid.</source>
         <source>datasourceName</source>
         <translation>Имя источника данных</translation>
     </message>
+    <message>
+        <source>RowIndex</source>
+        <translation>Индекс строки</translation>
+    </message>
 </context>
 <context>
     <name>LimeReport::SettingDialog</name>
@@ -2585,10 +2704,6 @@ This preview is no longer valid.</source>
         <translation>Язык</translation>
     </message>
     <message>
-        <source>Use dark theme</source>
-        <translation>Использовать Темную тему</translation>
-    </message>
-    <message>
         <source>Designer settings</source>
         <translation>Настройки дизайнера</translation>
     </message>
@@ -2607,6 +2722,14 @@ This preview is no longer valid.</source>
     <message>
         <source>Report settings</source>
         <translation>Настройки отчета</translation>
+    </message>
+    <message>
+        <source>Theme</source>
+        <translation>Тема</translation>
+    </message>
+    <message>
+        <source>Report units</source>
+        <translation>Единицы измерения</translation>
     </message>
 </context>
 <context>
@@ -3022,6 +3145,34 @@ This preview is no longer valid.</source>
     <message>
         <source>Export to PDF</source>
         <translation>Экспортировать в PDF</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation>По умолчанию</translation>
+    </message>
+    <message>
+        <source>margin</source>
+        <translation>Поля</translation>
+    </message>
+    <message>
+        <source>&apos;&apos;</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Millimeters</source>
+        <translation>Миллиметры</translation>
+    </message>
+    <message>
+        <source>Inches</source>
+        <translation>Дюймы</translation>
+    </message>
+    <message>
+        <source>Dark</source>
+        <translation>Темная</translation>
+    </message>
+    <message>
+        <source>Light</source>
+        <translation>Светлая</translation>
     </message>
 </context>
 </TS>

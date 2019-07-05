@@ -120,10 +120,14 @@ private slots:
     void slotLoadRecentFile(const QString fileName);
     void slotPageAdded(PageDesignIntf* );
     void slotPageDeleted();
+    void slotFilterTextChanged(const QString& filter);
 #ifdef HAVE_QTDESIGNER_INTEGRATION
     void slotDeleteDialog();
     void slotAddNewDialog();
 #endif
+    void slotLockSelectedItems();
+    void slotUnlockSelectedItems();
+    void slotSelectOneLevelItems();
 protected:
     void closeEvent(QCloseEvent *event);
     void resizeEvent(QResizeEvent *);
@@ -231,14 +235,17 @@ private:
     QAction* m_deleteDialogAction;
     QAction* m_addNewDialogAction;
 #endif
+
+    QAction* m_lockSelectedItemsAction;
+    QAction* m_unlockSelectedItemsAction;
+    QAction* m_selectOneLevelItems;
+
     QMenu*   m_recentFilesMenu;
 
     QSignalMapper* m_bandsAddSignalsMap;
     QSignalMapper* m_recentFilesSignalMap;
 
     ObjectInspectorWidget* m_objectInspector;
-    QObjectPropertyModel* m_propertyModel;
-
     ReportDesignWidget* m_reportDesignWidget;
     DataBrowser * m_dataBrowser;
     ScriptBrowser* m_scriptBrowser;
@@ -273,7 +280,7 @@ private:
     bool m_reportItemIsLocked;
     QMap<QDockWidget*, bool> m_leftDocVisibleState;
     QMap<QDockWidget*, bool> m_rightDocVisibleState;
-
+    QSortFilterProxyModel* m_filterModel;
 };
 
 class ObjectNameValidator : public ValidatorIntf{

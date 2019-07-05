@@ -51,7 +51,7 @@ PageItemDesignIntf::PageItemDesignIntf(QObject *owner, QGraphicsItem *parent) :
     m_pageOrientaion(Portrait), m_pageSize(A4), m_sizeChainging(false),
     m_fullPage(false), m_oldPrintMode(false), m_resetPageNumber(false),
     m_isExtendedInDesignMode(false), m_extendedHeight(1000), m_isTOC(false), m_setPageSizeToPrinter(false),
-    m_endlessHeight(false), m_printable(true)
+    m_endlessHeight(false), m_printable(true), m_pageFooter(0), m_printBehavior(Split)
 {
     setFixedPos(true);
     setPossibleResizeDirectionFlags(Fixed);
@@ -65,7 +65,7 @@ PageItemDesignIntf::PageItemDesignIntf(const PageSize pageSize, const QRectF &re
     m_pageOrientaion(Portrait), m_pageSize(pageSize), m_sizeChainging(false),
     m_fullPage(false), m_oldPrintMode(false), m_resetPageNumber(false),
     m_isExtendedInDesignMode(false), m_extendedHeight(1000), m_isTOC(false), m_setPageSizeToPrinter(false),
-    m_endlessHeight(false), m_printable(true)
+    m_endlessHeight(false), m_printable(true), m_pageFooter(0), m_printBehavior(Split)
 {
     setFixedPos(true);
     setPossibleResizeDirectionFlags(Fixed);
@@ -75,7 +75,8 @@ PageItemDesignIntf::PageItemDesignIntf(const PageSize pageSize, const QRectF &re
 
 PageItemDesignIntf::~PageItemDesignIntf()
 {
-    foreach(BandDesignIntf* band,m_bands) band->disconnect(this);
+    foreach(BandDesignIntf* band, m_bands)
+        band->disconnect(this);
     m_bands.clear();
 }
 
@@ -87,10 +88,10 @@ void PageItemDesignIntf::paint(QPainter *ppainter, const QStyleOptionGraphicsIte
         if (isExtendedInDesignMode()) rect.adjust(0,0,0,m_extendedHeight);
         ppainter->save();
         ppainter->setOpacity(0.8);
-        ppainter->fillRect(boundingRect(),pageBorderColor());
+        ppainter->fillRect(boundingRect(), pageBorderColor());
         ppainter->setOpacity(1);
-        ppainter->fillRect(rect,Qt::white);
-        paintGrid(ppainter,rect);
+        ppainter->fillRect(rect, Qt::white);
+        paintGrid(ppainter, rect);
         ppainter->setPen(gridColor());
         ppainter->drawRect(boundingRect());
         if (m_isExtendedInDesignMode){
@@ -106,7 +107,7 @@ void PageItemDesignIntf::paint(QPainter *ppainter, const QStyleOptionGraphicsIte
 
     if (itemMode() & PreviewMode) {
         ppainter->save();
-        ppainter->fillRect(rect(),Qt::white);
+        ppainter->fillRect(rect(), Qt::white);
         QPen pen;
         pen.setColor(Qt::gray);
         pen.setWidth(1);
@@ -127,8 +128,6 @@ BaseDesignIntf *PageItemDesignIntf::createSameTypeItem(QObject *owner, QGraphics
 
 void PageItemDesignIntf::geometryChangedEvent(QRectF newRect, QRectF)
 {
-//    if (scene())
-//      scene()->setSceneRect(newRect);
     Q_UNUSED(newRect)
     updateMarginRect();
     PageSize oldSize = m_pageSize;
@@ -144,13 +143,11 @@ QColor PageItemDesignIntf::selectionColor() const
 
 QColor PageItemDesignIntf::pageBorderColor() const
 {
-    //return QColor(180,220,150);
     return QColor(100,150,50);
 }
 
 QColor PageItemDesignIntf::gridColor() const
 {
-    //return QColor(240,240,240);
     return QColor(170,200,150);
 }
 
@@ -162,6 +159,12 @@ QRectF PageItemDesignIntf::boundingRect() const
         QRectF result = BaseDesignIntf::boundingRect();
         return result.adjusted(0,0,0,m_extendedHeight);
     }
+}
+
+void PageItemDesignIntf::setItemMode(BaseDesignIntf::ItemMode mode)
+{
+    ItemsContainerDesignInft::setItemMode(mode);
+    relocateBands();
 }
 
 void PageItemDesignIntf::clear()
@@ -183,7 +186,7 @@ BandDesignIntf *PageItemDesignIntf::bandByType(BandDesignIntf::BandsType bandTyp
 
 bool PageItemDesignIntf::isBandExists(BandDesignIntf::BandsType bandType)
 {
-    foreach(BandDesignIntf* band,childBands()){
+    foreach(BandDesignIntf* band, childBands()){
         if (band->bandType()==bandType) return true;
     }
     return false;
@@ -191,7 +194,7 @@ bool PageItemDesignIntf::isBandExists(BandDesignIntf::BandsType bandType)
 
 bool PageItemDesignIntf::isBandExists(const QString &bandType)
 {
-    foreach(BandDesignIntf* band, m_bands){
+    foreach(BandDesignIntf* band, childBands()){
         if (band->bandTitle()==bandType) return true;
     }
     return false;
@@ -199,7 +202,7 @@ bool PageItemDesignIntf::isBandExists(const QString &bandType)
 
 BandDesignIntf* PageItemDesignIntf::bandByIndex(int index)
 {
-    foreach(BandDesignIntf* band,m_bands){
+    foreach(BandDesignIntf* band, childBands()){
         if (band->bandIndex()==index) return band;
     }
     return 0;
@@ -223,14 +226,14 @@ int PageItemDesignIntf::calcBandIndex(BandDesignIntf::BandsType bandType, BandDe
     QSet<BandDesignIntf::BandsType> groupFooterIgnoredBands;
     groupFooterIgnoredBands << BandDesignIntf::DataFooter << BandDesignIntf::GroupHeader;
 
-    int bandIndex=-1;
-    qSort(m_bands.begin(),m_bands.end(),bandSortBandLessThenByIndex);
+    int bandIndex = -1;
+    qSort(m_bands.begin(), m_bands.end(), bandSortBandLessThenByIndex);
     if (bandType != BandDesignIntf::Data){
         foreach(BandDesignIntf* band,m_bands){
             if ((band->bandType() == BandDesignIntf::GroupHeader) && ( band->bandType() > bandType)) break;
             if ((band->bandType() <= bandType)){
                 if (bandIndex <= band->bandIndex()) {
-                    bandIndex=band->maxChildIndex(bandType)+1;
+                    bandIndex=band->maxChildIndex(bandType) + 1;
                 }
             } else { increaseBandIndex = true; break;}
         }
@@ -240,11 +243,11 @@ int PageItemDesignIntf::calcBandIndex(BandDesignIntf::BandsType bandType, BandDe
             if (band->bandType() == BandDesignIntf::Data)
                 maxChildIndex = std::max(maxChildIndex, band->maxChildIndex());
         }
-        bandIndex = std::max(bandIndex, maxChildIndex+1);
+        bandIndex = std::max(bandIndex, maxChildIndex + 1);
     }
 
-    if (bandIndex==-1) {
-        bandIndex = (int)(bandType);
+    if (bandIndex == -1) {
+        bandIndex = static_cast<int>(bandType);
         increaseBandIndex = true;
     }
 
@@ -265,12 +268,12 @@ int PageItemDesignIntf::calcBandIndex(BandDesignIntf::BandsType bandType, BandDe
             increaseBandIndex = true;
             break;
         case BandDesignIntf::SubDetailFooter:
-            bandIndex = parentBand->maxChildIndex()+1;
+            bandIndex = parentBand->maxChildIndex() + 1;
             increaseBandIndex = true;
             break;
         case BandDesignIntf::GroupHeader:
             if (parentBand->bandType()==BandDesignIntf::GroupHeader)
-                bandIndex = parentBand->bandIndex()+1;
+                bandIndex = parentBand->bandIndex() + 1;
             else
                 bandIndex = parentBand->minChildIndex(BandDesignIntf::GroupHeader);
             increaseBandIndex = true;
@@ -285,7 +288,7 @@ int PageItemDesignIntf::calcBandIndex(BandDesignIntf::BandsType bandType, BandDe
             increaseBandIndex = true;
             break;
         case BandDesignIntf::DataFooter:
-            bandIndex = parentBand->maxChildIndex()+1;
+            bandIndex = parentBand->maxChildIndex() + 1;
             increaseBandIndex = true;
             break;
         default :
@@ -299,9 +302,9 @@ int PageItemDesignIntf::calcBandIndex(BandDesignIntf::BandsType bandType, BandDe
 void PageItemDesignIntf::increaseBandIndex(int startIndex)
 {
     if (bandByIndex(startIndex)){
-    foreach(BandDesignIntf* band,m_bands){
-            if (band->bandIndex()>=startIndex){
-                band->setBandIndex(band->bandIndex()+1);
+    foreach(BandDesignIntf* band, m_bands){
+            if (band->bandIndex() >= startIndex){
+                band->setBandIndex(band->bandIndex() + 1);
             }
         }
     }
@@ -318,14 +321,13 @@ bool PageItemDesignIntf::isBandRegistred(BandDesignIntf *band)
 void PageItemDesignIntf::registerBand(BandDesignIntf *band)
 {
     if (!isBandRegistred(band)){
-        if (band->bandIndex()>childBands().count()-1)
+        if (band->bandIndex() > childBands().count() - 1)
             m_bands.append(band);
         else
-            m_bands.insert(band->bandIndex(),band);
-
+            m_bands.insert(band->bandIndex(), band);
         band->setParent(this);
         band->setParentItem(this);
-        band->setWidth(pageRect().width()/band->columnsCount());
+        band->setWidth(pageRect().width() / band->columnsCount());
         connect(band, SIGNAL(destroyed(QObject*)),this,SLOT(bandDeleted(QObject*)));
         connect(band, SIGNAL(posChanged(QObject*, QPointF, QPointF)),
                 this, SLOT(bandPositionChanged(QObject*, QPointF, QPointF)));
@@ -340,6 +342,16 @@ void PageItemDesignIntf::initColumnsPos(QVector<qreal> &posByColumns, qreal pos,
     for(int i=0;i<columnCount;++i){
         posByColumns.append(pos);
     }
+}
+
+void PageItemDesignIntf::setPrintBehavior(const PrintBehavior &printBehavior)
+{
+    m_printBehavior = printBehavior;
+}
+
+PageItemDesignIntf::PrintBehavior PageItemDesignIntf::printBehavior() const
+{
+    return m_printBehavior;
 }
 
 QString PageItemDesignIntf::printerName() const
@@ -424,6 +436,32 @@ void PageItemDesignIntf::setExtendedInDesignMode(bool pageIsExtended)
     update();
 }
 
+BandDesignIntf *PageItemDesignIntf::pageFooter() const
+{
+    return m_pageFooter;
+}
+
+void PageItemDesignIntf::setPageFooter(BandDesignIntf *pageFooter)
+{
+    m_pageFooter = pageFooter;
+}
+
+void PageItemDesignIntf::placeTearOffBand()
+{
+    BandDesignIntf* tearOffBand = bandByType(BandDesignIntf::TearOffBand);
+    if (tearOffBand){
+        BandDesignIntf* pf = pageFooter();
+        if (pf){
+            qreal bottomSpace = pageRect().bottom() - (tearOffBand->height() + pf->height() + bottomMargin());
+            tearOffBand->setItemPos(pageRect().x(),
+                                    bottomSpace);
+        } else {
+            qreal bottomSpace = pageRect().bottom() - (tearOffBand->height() + bottomMargin());
+            tearOffBand->setItemPos(pageRect().x(), bottomSpace);
+        }
+    }
+}
+
 bool PageItemDesignIntf::resetPageNumber() const
 {
     return m_resetPageNumber;
@@ -473,11 +511,11 @@ void PageItemDesignIntf::relocateBands()
 {
     if (isLoading()) return;
 
-    int bandSpace = (itemMode() & DesignMode)?4:0;
+    int bandSpace = 0;
 
     QVector<qreal> posByColumn;
 
-    qSort(m_bands.begin(),m_bands.end(),bandSortBandLessThenByIndex);
+    qSort(m_bands.begin(), m_bands.end(), bandSortBandLessThenByIndex);
 
     int bandIndex = 0;
     if (!(itemMode() & DesignMode)){
@@ -516,8 +554,8 @@ void PageItemDesignIntf::relocateBands()
                             m_bands[i+1]->setPos(pageRect().x(),posByColumn[0]);
                             posByColumn[0] += m_bands[i+1]->height()+bandSpace;
                     } else {
-                        m_bands[i+1]->setPos(pageRect().x(),posByColumn[0]+2);
-                        posByColumn[0] += m_bands[i+1]->height()+bandSpace+2;
+                        m_bands[i+1]->setPos(pageRect().x(),posByColumn[0]);
+                        posByColumn[0] += m_bands[i+1]->height()+bandSpace;
                     }
                 } else {
                     m_bands[i+1]->setPos(m_bands[i+1]->pos().x(),posByColumn[m_bands[i+1]->columnIndex()]);
@@ -529,6 +567,9 @@ void PageItemDesignIntf::relocateBands()
             if (band->isSelected()) band->updateBandNameLabel();
         }
     }
+
+    if (!(itemMode() & DesignMode))
+        placeTearOffBand();
 }
 
 void PageItemDesignIntf::removeBand(BandDesignIntf *band)
@@ -747,7 +788,6 @@ void PageItemDesignIntf::swapBands(BandDesignIntf* band, BandDesignIntf* bandToS
     BandDesignIntf* firstMoveBand = (bandToSwap->bandIndex() > band->bandIndex()) ? bandToSwap: band;
 
     firstMoveBand->changeBandIndex(firstIndex, true);
-    moveIndex = firstMoveBand->maxChildIndex() + 1;
     moveIndex = firstIndex;
     qSort(bandToMove.begin(), bandToMove.end(), bandIndexLessThen);
 
@@ -765,47 +805,68 @@ void PageItemDesignIntf::swapBands(BandDesignIntf* band, BandDesignIntf* bandToS
 
 }
 
+QList<BandDesignIntf*> PageItemDesignIntf::createBandGroup(int beginIndex, int endIndex)
+{
+    QList<BandDesignIntf*> result;
+    foreach(BandDesignIntf* curBand, m_bands){
+        if ( curBand->bandIndex() >= beginIndex && curBand->bandIndex() <= endIndex)
+            result.append(curBand);
+    }
+    qSort(result.begin(), result.end(), bandIndexLessThen);
+    return result;
+}
+
 void PageItemDesignIntf::moveBandFromTo(int from, int to)
 {
-    BandDesignIntf* firstBand = 0;
-    BandDesignIntf* secondBand = 0;
 
-    int firstIndex = std::min(from,to);
-    int secondIndex = std::max(from,to);
-    QList<BandDesignIntf*> bandsToMove;
-    int moveIndex = 0;
+    BandDesignIntf* fromBand = 0;
+    BandDesignIntf* toBand = 0;
 
     foreach(BandDesignIntf* band, bands()){
         if (band->bandIndex() == from){
-            firstBand = band;
+            fromBand = band->rootBand(band->parentBand());
         }
         if (band->bandIndex() == to){
-            secondBand = band;
-            bandsToMove.append(band);
+            toBand = band->rootBand(band->parentBand());
         }
+        if (fromBand && toBand) break;
     }
 
-    foreach(BandDesignIntf* curBand, m_bands){
-        if ( curBand->bandIndex() > firstIndex && curBand->bandIndex() < secondIndex &&
-            curBand->bandType() == firstBand->bandType() &&
-            curBand != firstBand
-        )
-            bandsToMove.append(curBand);
-    }
-    qSort(bandsToMove.begin(), bandsToMove.end(), bandIndexLessThen);
+    if (!fromBand || !toBand) return;
 
-
-    if (from > to){
-        firstBand->changeBandIndex(secondBand->minChildIndex(), true);
-        moveIndex = firstBand->maxChildIndex()+1;
+    int beginIndex = 0;
+    int endIndex = 0;
+    if (from < to){
+        beginIndex = fromBand->maxChildIndex()+1;
+        endIndex = toBand->maxChildIndex();
     } else {
-        moveIndex = firstBand->minChildIndex();
-        firstBand->changeBandIndex(secondBand->minChildIndex(), true);
+        beginIndex = toBand->minChildIndex();
+        endIndex = fromBand->minChildIndex()-1;
     }
 
-    foreach(BandDesignIntf* curBand, bandsToMove){
-       curBand->changeBandIndex(moveIndex,true);
-       moveIndex = curBand->maxChildIndex() + 1;
+    QList<BandDesignIntf*> firstGroup = createBandGroup(fromBand->minChildIndex(), fromBand->maxChildIndex());
+    QList<BandDesignIntf*> secondGroup = createBandGroup(beginIndex, endIndex);
+
+    if (from < to){
+        int currentIndex = fromBand->minChildIndex();
+        foreach(BandDesignIntf* band, secondGroup){
+            band->setBandIndex(currentIndex);
+            currentIndex++;
+        }
+        foreach(BandDesignIntf* band, firstGroup){
+            band->setBandIndex(currentIndex);
+            currentIndex++;
+        }
+    } else {
+        int currentIndex = toBand->minChildIndex();
+        foreach(BandDesignIntf* band, firstGroup){
+            band->setBandIndex(currentIndex);
+            currentIndex++;
+        }
+        foreach(BandDesignIntf* band, secondGroup){
+            band->setBandIndex(currentIndex);
+            currentIndex++;
+        }
     }
 
     relocateBands();
@@ -852,6 +913,18 @@ void PageItemDesignIntf::bandGeometryChanged(QObject* object, QRectF newGeometry
     bandPositionChanged(object, newGeometry.topLeft(), oldGeometry.topLeft());
 }
 
+void PageItemDesignIntf::setUnitTypeProperty(BaseDesignIntf::UnitType value)
+{
+    if (unitType() != value){
+        UnitType oldValue = unitType();
+        setUnitType(value);
+        if (!isLoading()){
+            update();
+            notify("units", oldValue, value);
+        }
+    }
+}
+
 void PageItemDesignIntf::collectionLoadFinished(const QString &collectionName)
 {
     if (collectionName.compare("children",Qt::CaseInsensitive)==0){
@@ -873,8 +946,12 @@ void PageItemDesignIntf::collectionLoadFinished(const QString &collectionName)
 void PageItemDesignIntf::updateMarginRect()
 {
     m_pageRect = rect();
-    m_pageRect.adjust(m_leftMargin*mmFactor(),m_topMargin*mmFactor(),
-                         -m_rightMargin*mmFactor(),-m_bottomMargin*mmFactor());
+    m_pageRect.adjust( leftMargin() * Const::mmFACTOR,
+                       topMargin() * Const::mmFACTOR,
+                      -rightMargin() * Const::mmFACTOR,
+                       -bottomMargin() * Const::mmFACTOR
+    );
+
     foreach(BandDesignIntf* band,m_bands){
         band->setWidth(pageRect().width()/band->columnsCount());
         relocateBands();
@@ -892,20 +969,27 @@ void PageItemDesignIntf::paintGrid(QPainter *ppainter, QRectF rect)
     ppainter->save();
     ppainter->setPen(QPen(gridColor()));
     ppainter->setOpacity(0.5);
-    for (int i=0;i<=(rect.height()-50)/100;i++){
-        ppainter->drawLine(rect.x(),(i*100)+rect.y()+50,rect.right(),i*100+rect.y()+50);
+    for (int i = 0; i <= (rect.height() - 5 * unitFactor()) / (10 * unitFactor()); ++i){
+        if (i * 10 * unitFactor() + 5 * unitFactor() >= topMargin() * Const::mmFACTOR)
+            ppainter->drawLine(rect.x(), (i * 10 * unitFactor()) + ( (rect.y() + 5 * unitFactor()) - (topMargin() * Const::mmFACTOR)),
+                           rect.right(), i * 10 * unitFactor() +( (rect.y() + 5 * unitFactor()) - (topMargin() * Const::mmFACTOR)));
     };
-    for (int i=0;i<=((rect.width()-50)/100);i++){
-        ppainter->drawLine(i*100+rect.x()+50,rect.y(),i*100+rect.x()+50,rect.bottom());
+    for (int i=0; i<=((rect.width() - 5 * unitFactor()) / (10 * unitFactor())); ++i){
+        if (i * 10 * unitFactor() + 5 * unitFactor() >= leftMargin() * Const::mmFACTOR)
+            ppainter->drawLine(i * 10 * unitFactor() + ((rect.x() + 5 * unitFactor()) - (leftMargin() * Const::mmFACTOR)), rect.y(),
+                           i * 10 * unitFactor() + ((rect.x() + 5 * unitFactor()) - (leftMargin() * Const::mmFACTOR)), rect.bottom());
     };
-
     ppainter->setPen(QPen(gridColor()));
     ppainter->setOpacity(1);
-    for (int i=0;i<=(rect.width()/100);i++){
-        ppainter->drawLine(i*100+rect.x(),rect.y(),i*100+rect.x(),rect.bottom());
+    for (int i = 0; i <= (rect.width() / (10 * unitFactor())); ++i){
+        if (i * 10 * unitFactor() >= leftMargin() * Const::mmFACTOR)
+            ppainter->drawLine(i * 10 * unitFactor() + (rect.x() - (leftMargin() * Const::mmFACTOR)), rect.y(),
+                           i * 10 * unitFactor() + (rect.x() - (leftMargin() * Const::mmFACTOR)), rect.bottom());
     };
-    for (int i=0;i<=rect.height()/100;i++){
-        ppainter->drawLine(rect.x(),i*100+rect.y(),rect.right(),i*100+rect.y());
+    for (int i = 0; i <= rect.height() / (10 * unitFactor()); ++i){
+        if (i * 10 * unitFactor() >= topMargin() * Const::mmFACTOR)
+            ppainter->drawLine(rect.x(), i * 10 * unitFactor() + (rect.y() - (topMargin() * Const::mmFACTOR)),
+                           rect.right(), i * 10 * unitFactor() + (rect.y() - (topMargin() * Const::mmFACTOR)));
     };
     ppainter->drawRect(rect);
     ppainter->restore();

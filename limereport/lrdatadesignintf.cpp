@@ -258,6 +258,13 @@ QVariant ModelToDataSource::data(const QString &columnName)
     return m_model->data(m_model->index(currentRow(),columnIndexByName(columnName)));
 }
 
+QVariant ModelToDataSource::dataByRowIndex(const QString &columnName, int rowIndex)
+{
+    if (m_model->rowCount() > rowIndex)
+        return m_model->data(m_model->index(rowIndex, columnIndexByName(columnName)));
+    return QVariant();
+}
+
 QVariant ModelToDataSource::dataByKeyField(const QString& columnName, const QString& keyColumnName, QVariant keyData)
 {
    for( int i=0; i < m_model->rowCount(); ++i ){
@@ -693,13 +700,28 @@ QVariant CallbackDatasource::data(const QString& columnName)
     return result;
 }
 
+QVariant CallbackDatasource::dataByRowIndex(const QString &columnName, int rowIndex)
+{
+    int backupCurrentRow = m_currentRow;
+    QVariant result = QVariant();
+    first();
+    for (int i = 0; i < rowIndex && !eof(); ++i, next()){}
+    if (!eof()) result = callbackData(columnName, rowIndex);
+    first();
+    if (backupCurrentRow != -1){
+        for (int i = 0; i < backupCurrentRow; ++i)
+            next();
+    }
+    return result;
+}
+
 QVariant CallbackDatasource::dataByKeyField(const QString& columnName, const QString& keyColumnName, QVariant keyData)
 {
     int backupCurrentRow = m_currentRow;
-    int currentRow = 0;
     QVariant result = QVariant();
     first();
     if (!checkIfEmpty()){
+        int currentRow = 0;
         do {
             QVariant key = callbackData(keyColumnName, currentRow);
             if (key == keyData){
@@ -807,6 +829,120 @@ bool CallbackDatasource::checkIfEmpty(){
         emit getCallbackData(info,isEmpty);
         return isEmpty.toBool();
     }
+}
+
+QString CSVDesc::name() const
+{
+    return m_csvName;
+}
+
+void CSVDesc::setName(const QString &csvName)
+{
+    m_csvName = csvName;
+}
+
+QString CSVDesc::csvText() const
+{
+    return m_csvText;
+}
+
+void CSVDesc::setCsvText(const QString &csvText)
+{
+    m_csvText = csvText;
+    emit cvsTextChanged(m_csvName, m_csvText);
+}
+
+QString CSVDesc::separator() const
+{
+    return m_separator;
+}
+
+void CSVDesc::setSeparator(const QString &separator)
+{
+    m_separator = separator;
+}
+
+bool CSVDesc::firstRowIsHeader() const
+{
+    return m_firstRowIsHeader;
+}
+
+void CSVDesc::setFirstRowIsHeader(bool firstRowIsHeader)
+{
+    m_firstRowIsHeader = firstRowIsHeader;
+}
+
+void CSVHolder::updateModel()
+{
+    m_model.clear();
+    QString sep = (separator().compare("\\t") == 0) ? "\t" : separator();
+    bool firstRow = true;
+    QList<QStandardItem*> columns;
+    QStringList headers;
+    foreach(QString line, m_csvText.split('\n')){
+        columns.clear();
+        foreach(QString item, line.split(sep)){
+            columns.append(new QStandardItem(item));
+            if (firstRow && m_firstRowIsHeader) headers.append(item);
+        }
+
+        if (firstRow){
+            if (!headers.isEmpty()){
+                m_model.setHorizontalHeaderLabels(headers);
+                firstRow = false;
+            } else {
+                m_model.appendRow(columns);
+            }
+        } else {
+            m_model.appendRow(columns);
+        }
+
+    }
+
+
+}
+
+bool CSVHolder::firsRowIsHeader() const
+{
+    return m_firstRowIsHeader;
+}
+
+void CSVHolder::setFirsRowIsHeader(bool firstRowIsHeader)
+{
+    m_firstRowIsHeader = firstRowIsHeader;
+}
+
+CSVHolder::CSVHolder(const CSVDesc &desc, DataSourceManager *dataManager)
+    : m_csvText(desc.csvText()),
+      m_separator(desc.separator()),
+      m_dataManager(dataManager),
+      m_firstRowIsHeader(desc.firstRowIsHeader())
+{
+    m_dataSource = IDataSource::Ptr(new ModelToDataSource(&m_model, false));
+    updateModel();
+}
+
+void CSVHolder::setCSVText(QString csvText)
+{
+    m_csvText = csvText;
+    updateModel();
+}
+
+QString CSVHolder::separator() const
+{
+    return m_separator;
+}
+
+void CSVHolder::setSeparator(const QString &separator)
+{
+    m_separator = separator;
+    updateModel();
+}
+
+IDataSource *CSVHolder::dataSource(IDataSource::DatasourceMode mode)
+{
+    Q_UNUSED(mode);
+    return m_dataSource.data();
 }
 
 } //namespace LimeReport

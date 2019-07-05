@@ -36,8 +36,10 @@
 #include <QComboBox>
 #include <QSettings>
 #include <QEventLoop>
+#include <QPrinter>
 
 #include "serializators/lrxmlreader.h"
+#include "lrpreparedpagesintf.h"
 
 namespace LimeReport {
 
@@ -61,6 +63,7 @@ public:
     ~PreviewReportWindow();
     void setReportReader(ItemsReaderIntf::Ptr reader);
     void setPages(ReportPages pages);
+    void setDefaultPrinter(QPrinter* printer);
     void exec();
     void initPreview(int pagesCount);
     void reloadPreview();
@@ -70,10 +73,15 @@ public:
     void setStatusBarVisible(bool value);
     void setMenuVisible(bool value);
     void setHideResultEditButton(bool value);
+    void setHidePrintButton(bool value);
+    void setHideSaveToFileButton(bool value);
+    void setHidePrintToPdfButton(bool value);
+    void setEnablePrintMenu(bool value);
     QSettings* settings();
     ScaleType previewScaleType() const;
     void setPreviewScaleType(const ScaleType &previewScaleType, int percent = 0);
-
+    QColor previewPageBackgroundColor();
+    void setPreviewPageBackgroundColor(QColor color);
 protected:
     void writeSetting();
     void restoreSetting();
@@ -97,6 +105,9 @@ public slots:
     void slotLastPage();
     void slotPrintToPDF();
     void slotPageChanged(int pageIndex);
+    void slotInsertNewTextItem();
+    void slotActivateItemSelectionMode();
+    void slotDeleteSelectedItems();
 private slots:
     void on_actionFit_page_width_triggered();
     void on_actionFit_page_triggered();
@@ -105,6 +116,10 @@ private slots:
     void slotScalePercentChanged(int percent);    
     void on_actionShowMessages_toggled(bool value);
     void on_actionShow_Toolbar_triggered();
+    void slotCurrentPageChanged(int page);
+    void slotItemInserted(LimeReport::PageDesignIntf* report, QPointF pos, const QString& ItemType);
+signals:
+    void onSave(bool& saved, LimeReport::IPreparedPages* pages);
 private:
     ItemsReaderIntf* reader();
     void initPercentCombobox();
@@ -124,7 +139,6 @@ private:
     ScaleType m_previewScaleType;
     int m_previewScalePercent;
     bool m_scalePercentChanging;
-
 };
 } //namespace LimeReport
 #endif // LRPREVIEWREPORTWINDOW_H

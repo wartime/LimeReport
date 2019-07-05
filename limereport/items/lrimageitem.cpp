@@ -93,6 +93,7 @@ void ImageItem::processPopUpAction(QAction *action)
     if (action->text().compare(tr("Watermark")) == 0){
         page()->setPropertyToSelectedItems("watermark",action->isChecked());
     }
+    ItemDesignIntf::processPopUpAction(action);
 }
 
 bool ImageItem::useExternalPainter() const
@@ -120,6 +121,8 @@ void ImageItem::updateItemSize(DataSourceManager* dataManager, RenderPass pass, 
               loadPictureFromVariant(data);
            }
        } else if (!m_resourcePath.isEmpty()){
+           m_resourcePath = expandUserVariables(m_resourcePath, pass, NoEscapeSymbols, dataManager);
+           m_resourcePath = expandDataFields(m_resourcePath, NoEscapeSymbols, dataManager);
            m_picture = QImage(m_resourcePath);
        } else if (!m_variable.isEmpty()){
            QVariant data = dataManager->variable(m_variable);

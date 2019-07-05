@@ -143,6 +143,10 @@ void EnumPropItem::translateEnumItemName()
     tr("TitleAlignCenter");
     tr("Layout");
     tr("Table");
+    tr("Millimeters");
+    tr("Inches");
+    tr("Scale");
+    tr("Split");
 }
 
 void EnumPropItem::setPropertyEditorData(QWidget *propertyEditor, const QModelIndex &) const
@@ -160,7 +164,7 @@ void EnumPropItem::setModelData(QWidget *propertyEditor, QAbstractItemModel *mod
 QString EnumPropItem::nameByType(int value) const
 {
     QMetaEnum propEnum = object()->metaObject()->property(object()->metaObject()->indexOfProperty(propertyName().toLatin1())).enumerator();
-    return tr(propEnum.valueToKey(value));
+    return isTranslateProperty() ? tr(propEnum.valueToKey(value)) : propEnum.valueToKey(value);
 }
 
 int EnumPropItem::typeByName(const QString &value) const

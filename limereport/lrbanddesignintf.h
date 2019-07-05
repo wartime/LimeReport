@@ -62,12 +62,17 @@ public:
     qreal width(){return m_rect.width();}
     qreal height(){return m_rect.height();}
 protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event);
+    void  mousePressEvent(QGraphicsSceneMouseEvent *event);
     void  contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
+
+    void  hoverMoveEvent(QGraphicsSceneHoverEvent* event);
+    void  mouseMoveEvent(QGraphicsSceneMouseEvent* event);
+    void  mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
 private:
     QRectF m_rect;
     QColor m_color;
     BandDesignIntf* m_band;
+    QPointF m_oldBandPos;
 };
 
 class BandNameLabel : public QGraphicsItem{
@@ -142,6 +147,7 @@ public:
     virtual QString bandTitle() const;
     virtual QIcon bandIcon() const;
     virtual bool isUnique() const;
+    void setItemMode(BaseDesignIntf::ItemMode mode);
     void updateItemSize(DataSourceManager *dataManager, RenderPass pass=FirstPass, int maxHeight=0);
     void restoreItems();
     void recalcItems(DataSourceManager* dataManager);
@@ -176,6 +182,9 @@ public:
     int minChildIndex(QSet<BandsType> ignoredBands = QSet<BandDesignIntf::BandsType>());
     int maxChildIndex(BandDesignIntf::BandsType bandType) const;
     int maxChildIndex(QSet<BandsType> ignoredBands = QSet<BandDesignIntf::BandsType>()) const;
+
+    int rootIndex(BandDesignIntf *parentBand);
+    BandDesignIntf* rootBand(BandDesignIntf *parentBand);
 
     BandDesignIntf* parentBand() const {return m_parentBand;}
 
@@ -250,6 +259,8 @@ public:
     void setBackgroundOpacity(int value);
     int bootomSpace() const;
     void setBootomSpace(int bootomSpace);
+    void updateBandMarkerGeometry();
+
 signals:
     void bandRendered(BandDesignIntf* band);
     void preparedForRender();

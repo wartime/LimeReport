@@ -23,21 +23,25 @@ public:
     QFont defaultFont();
     QFont scriptFont();
     int tabIndention();
-    bool userDarkTheme();
+    QString theme();
     bool suppressAbsentFieldsAndVarsWarnings();
     QLocale::Language designerLanguage();
+    QString reportUnits();
     void setSuppressAbsentFieldsAndVarsWarnings(bool value);
     void setHorizontalGridStep(int value);
     void setVerticalGridStep(int value);
     void setDefaultFont(const QFont& value);
     void setScriptFont(const QFont& value);
     void setScritpTabIndention(int size);
-    void setUseDarkTheme(bool value);
+    void setTheme(const QString& theme);
     void setDesignerLanguages(QList<QLocale::Language> languages, QLocale::Language currentLanguage);
+    void setDesignerThemes(QList<QString> themes, const QString& currentTheme);
+    void setDesignerUnites(QList<QString> unitTypes, const QString currentUnitType);
     void setSettings(QSettings* settings);
 private slots:
     void on_bbOkCancel_accepted();
-
+private:
+    bool isFileExists(const QString& path);
 private:
     Ui::SettingDialog *ui;
     QList<QLocale::Language> m_aviableLanguages;

@@ -29,9 +29,6 @@
  ****************************************************************************/
 #include <QtGui>
 #include <QTextLayout>
-#ifndef USE_QJSENGINE
-#include <QtScript/QScriptEngine>
-#endif
 #include <QLocale>
 #include <QMessageBox>
 #include <math.h>
@@ -62,7 +59,7 @@ namespace LimeReport{
 TextItem::TextItem(QObject *owner, QGraphicsItem *parent)
     : ContentItemDesignIntf(xmlTag,owner,parent), m_angle(Angle0), m_trimValue(true), m_allowHTML(false),
       m_allowHTMLInFields(false), m_replaceCarriageReturns(false), m_followTo(""), m_follower(0), m_textIndent(0),
-      m_textLayoutDirection(Qt::LayoutDirectionAuto), m_hideIfEmpty(false)
+      m_textLayoutDirection(Qt::LayoutDirectionAuto), m_hideIfEmpty(false), m_fontLetterSpacing(0)
 {
     PageItemDesignIntf* pageItem = dynamic_cast<PageItemDesignIntf*>(parent);
     BaseDesignIntf* parentItem = dynamic_cast<BaseDesignIntf*>(parent);
@@ -155,6 +152,8 @@ void TextItem::processPopUpAction(QAction *action)
     if (action->text().compare(tr("Hide if empty")) == 0){
         page()->setPropertyToSelectedItems("hideIfEmpty",action->isChecked());
     }
+
+    ContentItemDesignIntf::processPopUpAction(action);
 }
 
 void TextItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* style, QWidget* widget) {
@@ -548,6 +547,23 @@ TextItem::TextPtr TextItem::textDocument() const
 
     return text;
 
+}
+
+int TextItem::fontLetterSpacing() const
+{
+    return m_fontLetterSpacing;
+}
+
+void TextItem::setFontLetterSpacing(int value)
+{
+    if (m_fontLetterSpacing != value){
+        int oldValue = m_fontLetterSpacing;
+        m_fontLetterSpacing = value;
+        QFont curFont = font();
+        curFont.setLetterSpacing(QFont::AbsoluteSpacing, m_fontLetterSpacing);
+        setFont(curFont);
+        notify("fontLetterSpacing", oldValue, value);
+    }
 }
 
 bool TextItem::hideIfEmpty() const
@@ -972,6 +988,7 @@ void TextItem::setTextItemFont(QFont value)
 {
     if (font()!=value){
         QFont oldValue = font();
+        value.setLetterSpacing(QFont::AbsoluteSpacing, m_fontLetterSpacing);
         setFont(value);
         if (!isLoading()) update();
         notify("font",oldValue,value);

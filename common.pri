@@ -47,6 +47,7 @@ lessThan(QT_MAJOR_VERSION, 5){
 contains(CONFIG, qtscriptengine){
     CONFIG -= qjsengine
     QT *= script
+    DEFINES *= USE_QTSCRIPTENGINE
     message(qtscriptengine)
 }
 
@@ -103,8 +104,15 @@ unix{
     }
 }
 win32 {
-    ARCH_DIR       = $${OUT_PWD}/win32
-    ARCH_TYPE      = win32
+    !contains(QT_ARCH, x86_64) {
+        message("Compiling for 32bit system")
+        ARCH_DIR       = $${OUT_PWD}/win32
+        ARCH_TYPE      = win32
+    } else {
+        message("Compiling for 64bit system")
+        ARCH_DIR       = $${OUT_PWD}/win64
+        ARCH_TYPE      = win64
+    }
 }
 
 DEST_LIBS = $${BUILD_DIR}/$${ARCH_TYPE}/$${BUILD_TYPE}/lib
@@ -118,8 +126,8 @@ OBJECTS_DIR    = $${ARCH_DIR}/$${BUILD_TYPE}/obj
 RCC_DIR        = $${ARCH_DIR}/$${BUILD_TYPE}/rcc
 
 LIMEREPORT_VERSION_MAJOR = 1
-LIMEREPORT_VERSION_MINOR = 4
-LIMEREPORT_VERSION_RELEASE = 123
+LIMEREPORT_VERSION_MINOR = 5
+LIMEREPORT_VERSION_RELEASE = 1
 
 LIMEREPORT_VERSION = '$${LIMEREPORT_VERSION_MAJOR}.$${LIMEREPORT_VERSION_MINOR}.$${LIMEREPORT_VERSION_RELEASE}'
 DEFINES *= LIMEREPORT_VERSION_STR=\\\"$${LIMEREPORT_VERSION}\\\"
@@ -131,7 +139,7 @@ TRANSLATIONS_PATH = $$PWD/translations
 
 greaterThan(QT_MAJOR_VERSION, 4) {
     DEFINES *= HAVE_QT5
-    QT *= printsupport widgets qml
+    QT *= printsupport widgets
     contains(QT,uitools){
         message(uitools)
         DEFINES *= HAVE_UI_LOADER
@@ -139,6 +147,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     contains(CONFIG, qjsengine){
         message(qjsengine)
         DEFINES *= USE_QJSENGINE
+        QT *= qml
     }
 }
 

@@ -56,6 +56,25 @@ class PrintRange;
 class ReportDesignWindow;
 class ReportExporterInterface;
 
+
+class WatermarkHelper{
+public:
+    WatermarkHelper(const WatermarkSetting& watermark)
+        : m_watermark(watermark){}
+    qreal sceneX();
+    qreal sceneY();
+    qreal sceneWidth();
+    qreal sceneHeight();
+    QPointF scenePos();
+    QSizeF  sceneSize();
+    QPointF mapToPage(const PageItemDesignIntf &page);
+private:
+    qreal valueToPixels(qreal value);
+private:
+    const WatermarkSetting& m_watermark;
+};
+
+
 class ReportEnginePrivateInterface {
 public:
     virtual PageDesignIntf*         appendPage(const QString& pageName="") = 0;
@@ -147,13 +166,14 @@ public:
     }
 
     void    clearReport();
-    bool    printReport(QPrinter *printer=0);
+    bool    printReport(QPrinter* printer=0);
     bool    printReport(QMap<QString, QPrinter*>printers, bool printToAllPrinters);
     bool    printPages(ReportPages pages, QPrinter *printer);
     void    printToFile(const QString& fileName);
     bool    printToPDF(const QString& fileName);
     bool    exportReport(QString exporterName, const QString &fileName = "", const QMap<QString, QVariant>& params = QMap<QString, QVariant>());
     void    previewReport(PreviewHints hints = PreviewBarsUserSetting);
+    void    previewReport(QPrinter* printer, PreviewHints hints = PreviewBarsUserSetting);
 
     ReportDesignWindowInterface* getDesignerWindow();
     void    designReport();
@@ -189,12 +209,20 @@ public:
     void setPreviewWindowIcon(const QIcon &previewWindowIcon);
     QString previewWindowTitle() const;
     void setPreviewWindowTitle(const QString &previewWindowTitle);
+    QColor previewWindowPageBackground();
+    void setPreviewWindowPageBackground(QColor color);
 
     bool suppressFieldAndVarError() const;
     void setSuppressFieldAndVarError(bool suppressFieldAndVarError);
     bool isBusy();
     bool resultIsEditable() const;
     void setResultEditable(bool value);
+    bool saveToFileIsVisible() const;
+    void setSaveToFileVisible(bool value);
+    bool printToPdfIsVisible() const;
+    void setPrintToPdfVisible(bool value);
+    bool printIsVisible() const;
+    void setPrintVisible(bool value);
 
     void setPassPhrase(const QString &passPhrase);
     bool addTranslationLanguage(QLocale::Language language);
@@ -214,6 +242,12 @@ public:
     ScaleType previewScaleType();
     int       previewScalePercent();
     void      setPreviewScaleType(const ScaleType &previewScaleType, int percent = 0);
+    void      addWatermark(const WatermarkSetting& watermarkSetting);
+    void      clearWatermarks();
+    IPreparedPages* preparedPages();
+    bool showPreparedPages(PreviewHints hints);
+    bool prepareReportPages();
+    bool printPreparedPages();
 signals:
     void    pagesLoadFinished();
     void    datasourceCollectionLoadFinished(const QString& collectionName);
@@ -223,21 +257,23 @@ signals:
     void    renderPageFinished(int renderedPageCount);
     void    onSave(bool& saved);
     void    onSaveAs(bool& saved);
+    void    onSavePreview(bool& saved, LimeReport::IPreparedPages* pages);
     void    onLoad(bool& loaded);
     void    saveFinished();
     void    loadFinished();
     void    printedToPDF(QString fileName);
 
-    void    getAviableLanguages(QList<QLocale::Language>* languages);
-    void    currentDefaulLanguageChanged(QLocale::Language);
-    QLocale::Language  getCurrentDefaultLanguage();
+    void    getAvailableDesignerLanguages(QList<QLocale::Language>* languages);
+    void    currentDefaultDesignerLanguageChanged(QLocale::Language);
+    QLocale::Language  getCurrentDefaultDesignerLanguage();
     void    externalPaint(const QString& objectName, QPainter* painter, const QStyleOptionGraphicsItem*);
 
 public slots:
     bool    slotLoadFromFile(const QString& fileName);
     void    cancelRender();
 protected:
-    PageDesignIntf* createPage(const QString& pageName="");
+    PageDesignIntf* createPage(const QString& pageName="", bool preview = false);
+    bool showPreviewWindow(ReportPages pages, PreviewHints hints);
 protected slots:
     void    slotDataSourceCollectionLoaded(const QString& collectionName);
 private slots:
@@ -267,6 +303,8 @@ private:
 private:
     QList<PageDesignIntf*> m_pages;
     QList<PageItemDesignIntf*> m_renderingPages;
+    ReportPages m_preparedPages;
+    PreparedPages* m_preparedPagesManager;
     DataSourceManager* m_datasources;
     ScriptEngineContext* m_scriptEngineContext;
     ReportRender::Ptr m_reportRender;
@@ -299,6 +337,12 @@ private:
     ScaleType m_previewScaleType;
     int m_previewScalePercent;
     int m_startTOCPage;
+    QColor m_previewPageBackgroundColor;
+    QVector<WatermarkSetting> m_watermarks;
+    BaseDesignIntf *createWatermark(PageDesignIntf *page, WatermarkSetting watermarkSetting);
+    bool m_saveToFileVisible;
+    bool m_printToPdfVisible;
+    bool m_printVisible;
 };
 
 }
